@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú Interactivo | IKU</title>
+    <title>Menú Interactivo | SFG</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
@@ -12,27 +12,26 @@
 <body>
     <div class="container">
         <header class="hero">
-            <div>
-                <p class="overline">BIENVENIDO A</p>
+            <div class="brand-header">
+                <p class="overline">RESTAURANTE BAR</p>
                 <h1>IKU</h1>
-                <p>Restaurante Bar</p>
             </div>
             <div class="info-box">
-                <p><strong>Pueblo Bello, Cesar</strong></p>
-                <p class="tagline">★ Sabor ancestral ★</p>
-                 <p class="tagline">★ Sabor ancestral ★</p>
-                 <p class="tagline">★ Sabor ancestral ★</p>
+                <p><strong>PUEBLO BELLO, CESAR</strong></p>
+                <p class="tagline">★ Sabor que conecta ★</p>
+                <p class=>Lun a vie 7:00 am - 4:00 pm</p>
+                 <p class=>sab a dom 7:00 am - 10:00 pm</p>
             </div>
         </header>
 
         <main class="menu-content">
             <nav class="tabs">
-                <button class="tab-btn active" onclick="switchTab(event, 'diario')">Menú del Día</button>
-                <button class="tab-btn" onclick="switchTab(event, 'rapida')">Comidas Rápidas</button>
-                <button class="tab-btn" onclick="switchTab(event, 'varios')">Varios</button>
+                <button class="tab-btn active" data-tab="diario">Menú del Día</button>
+                <button class="tab-btn" data-tab="rapida">Comidas Rápidas</button>
+                <button class="tab-btn" data-tab="varios">Varios</button>
             </nav>
 
-            <div id="loader" class="loader">Cargando menú...</div>
+            <div id="loader" class="loader">Preparando el menú...</div>
             
             <section id="diario" class="menu-section active"></section>
             <section id="rapida" class="menu-section"></section>
