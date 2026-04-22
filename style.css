@@ -22,7 +22,7 @@ body {
     flex: 1; 
     /* Mantenemos el degradado oscuro para que el logo blanco resalte */
     background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
-                url('IKU FONDO.jpg') center/cover no-repeat;
+                url('IKU F.jpg') center/cover no-repeat;
     
     color: white; 
     padding: 40px; 
