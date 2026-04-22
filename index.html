@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú | Restaurante IKU</title>
+    <title>Menú Interactivo | SFG</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="container">
         <header class="hero">
             <div>
                 <p class="overline">BIENVENIDO A</p>
-                <h1>IKU</h1>
-                <p>RESTAURANTE BAR</p>
+                <h1>SFG</h1>
+                <p>Street Food Global</p>
             </div>
-
             <div class="info-box">
-                <p><strong>PUEBLO BELLO, CESAR</strong></p>
-                <p>Abierto: Lus-Vie 7:00 AM - 4:00 PM </p>
-                 <p>Sab-Dom 7:00 AM </p>
-                <p class="tagline">★ Sabor que deleita ★</p>
+                <p><strong>Sabaneta, Antioquia</strong></p>
+                <p class="tagline">★ Sabor que conecta ★</p>
             </div>
         </header>
 
@@ -34,67 +30,14 @@
                 <button class="tab-btn" onclick="switchTab(event, 'varios')">Varios</button>
             </nav>
 
-            <section id="diario" class="menu-section active">
-                <div class="dish-item" onclick="toggleIngredients(this)">
-                    <div class="dish-header">
-                        <h3>Bowl de Pollo Crispy</h3>
-                        <span class="price">$18.500</span>
-                    </div>
-                    <p class="description">Base de arroz jazmín, vegetales salteados y pollo apanado en panko.</p>
-                    <div class="ingredients">
-                        <h4>Productos utilizados:</h4>
-                        <ul>
-                            <li>Arroz Jazmín</li>
-                            <li>Pechuga de Pollo</li>
-                            <li>Panko</li>
-                            <li>Salsa Teriyaki</li>
-                            <li>Sésamo</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <section id="rapida" class="menu-section">
-                <div class="dish-item" onclick="toggleIngredients(this)">
-                    <div class="dish-header">
-                        <h3>Bao de Pulled Pork</h3>
-                        <span class="price">$22.000</span>
-                    </div>
-                    <p class="description">Pan al vapor con cerdo desmechado, cebolla encurtida y cilantro.</p>
-                    <div class="ingredients">
-                        <h4>Productos utilizados:</h4>
-                        <ul>
-                            <li>Pan Bao artesanal</li>
-                            <li>Bondiola de cerdo</li>
-                            <li>Cebolla roja</li>
-                            <li>Vinagre de arroz</li>
-                            <li>Cilantro fresco</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <section id="varios" class="menu-section">
-                <div class="dish-item" onclick="toggleIngredients(this)">
-                    <div class="dish-header">
-                        <h3>Soda de Lychee</h3>
-                        <span class="price">$9.000</span>
-                    </div>
-                    <p class="description">Refrescante mezcla de lychee natural, soda y menta.</p>
-                    <div class="ingredients">
-                        <h4>Productos utilizados:</h4>
-                        <ul>
-                            <li>Fruta de Lychee</li>
-                            <li>Hojas de menta</li>
-                            <li>Soda Schweppes</li>
-                            <li>Jarabe simple</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
+            <div id="loader" class="loader">Cargando menú...</div>
+            
+            <section id="diario" class="menu-section active"></section>
+            <section id="rapida" class="menu-section"></section>
+            <section id="varios" class="menu-section"></section>
         </main>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
