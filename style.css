@@ -59,8 +59,15 @@ body {
 .description { font-size: 0.9rem; color: var(--text-muted); margin-top: 8px; }
 
 .loader { text-align: center; padding: 50px; color: #999; font-style: italic; }
-.menu-section { display: none; }
-.menu-section.active { display: block; }
+/* Ocultar todas las secciones por defecto */
+.menu-section { 
+    display: none; 
+}
+
+/* Solo mostrar la que tenga la clase 'active' */
+.menu-section.active { 
+    display: block; 
+}
 
 /* RESPONSIVE PARA CELULARES */
 @media (max-width: 850px) {
