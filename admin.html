@@ -2,126 +2,53 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Administración | IKU</title>
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: #1a1a1a; color: white; padding: 20px; display: flex; justify-content: center; }
-        .card { background: white; color: #333; padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
-        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .btn-save { background: #ffcc00; border: none; padding: 15px; font-weight: bold; width: 100%; cursor: pointer; border-radius: 6px; text-transform: uppercase; }
-        .btn-google { background: #4285F4; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; border-radius: 6px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin SFG | Gestión</title>
+    <link rel="stylesheet" href="style.css"> <style>
+        /* Estilos específicos para el formulario de admin */
+        body { background: #1a1a1a; color: white; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; color: #333; padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-save { background: #ffcc00; border: none; padding: 15px; font-weight: bold; width: 100%; cursor: pointer; border-radius: 6px; }
+        .btn-google { background: #4285F4; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; border-radius: 6px; font-weight: bold; width: 100%; }
         #admin-panel { display: none; }
-        .user-info { font-size: 0.8rem; color: #666; margin-bottom: 20px; text-align: right; }
+        .plato-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; margin-top: 10px; }
+        .btn-delete { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <div id="login-screen">
-            <h2>IKU Global Admin</h2>
-            <p style="text-align:center; color:#666; margin-bottom:20px;">Acceso exclusivo para personal autorizado.</p>
-            <button class="btn-google" id="login-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                Entrar con Google
-            </button>
+            <h2 style="text-align:center">SFG Admin</h2>
+            <button class="btn-google" id="login-btn">Entrar con Google</button>
         </div>
 
         <div id="admin-panel">
-            <div class="user-info" id="user-tag"></div>
-            <h2>Gestionar Menú</h2>
+            <p id="user-tag" style="font-size:0.7rem; color: #888; text-align:right"></p>
+            <h2>Nuevo Plato</h2>
             <form id="menu-form">
-                <label>Nombre del Plato</label>
-                <input type="text" id="name" placeholder="Ej: Tacos al Pastor" required>
-                
-                <label>Precio (Solo números)</label>
-                <input type="number" id="price" placeholder="Ej: 18500" required>
-                
-                <label>Categoría</label>
+                <input type="text" id="name" placeholder="Nombre del plato" required>
+                <input type="number" id="price" placeholder="Precio (ej: 22000)" required>
                 <select id="category">
                     <option value="diario">Menú del Día</option>
                     <option value="rapida">Comidas Rápidas</option>
                     <option value="varios">Varios</option>
                 </select>
-                
-                <label>Descripción</label>
-                <textarea id="desc" rows="3" placeholder="Describe el sabor del plato..."></textarea>
-                
-                <label>Ingredientes (Separados por coma)</label>
-                <input type="text" id="ingredients" placeholder="Ej: Tortilla, Cerdo, Piña, Cilantro">
-                
-                <button type="submit" class="btn-save">Publicar en el Menú</button>
+                <textarea id="desc" placeholder="Descripción"></textarea>
+                <input type="text" id="ingredients" placeholder="Ingredientes (separados por coma)">
+                <button type="submit" class="btn-save">PUBLICAR EN EL MENÚ</button>
             </form>
-            <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
-<h3>Platos Activos</h3>
-<div id="lista-admin" style="color: #333;">
-    </div>
-            <br>
-            <button onclick="logout()" style="width:100%; background:none; border:none; color:#d9534f; cursor:pointer; font-size:0.9rem;">Cerrar Sesión</button>
+
+            <hr style="margin:30px 0">
+            <h3>Platos Activos (Para retirar)</h3>
+            <div id="lista-admin">
+                </div>
+            
+            <button id="logout-btn" style="background:none; border:none; color:red; cursor:pointer; margin-top:20px; width:100%">Cerrar Sesión</button>
         </div>
     </div>
 
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-
-        // LISTA BLANCA DE CORREOS
-        const correosAutorizados = [
-            "cb01grupo@gmail.com", 
-            "kelly.araujotafur@gmail.com"
-        ];
-
-        const loginBtn = document.getElementById('login-btn');
-        const adminPanel = document.getElementById('admin-panel');
-        const loginScreen = document.getElementById('login-screen');
-        const userTag = document.getElementById('user-tag');
-
-        // Función Entrar
-        loginBtn.onclick = () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(err => alert("Error: " + err.message));
-        };
-
-        // Función Salir
-        window.logout = () => signOut(auth);
-
-        // Vigilante de Sesión
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                if (correosAutorizados.includes(user.email)) {
-                    // Acceso permitido
-                    adminPanel.style.display = 'block';
-                    loginScreen.style.display = 'none';
-                    userTag.innerText = "Conectado como: " + user.email;
-                } else {
-                    // Intento fallido
-                    alert("Acceso denegado: " + user.email + " no tiene permisos.");
-                    signOut(auth);
-                }
-            } else {
-                adminPanel.style.display = 'none';
-                loginScreen.style.display = 'block';
-            }
-        });
-
-        // Guardar en la Base de Datos
-        document.getElementById('menu-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            try {
-                await addDoc(collection(db, "platos"), {
-                    nombre: document.getElementById('name').value,
-                    precio: document.getElementById('price').value,
-                    categoria: document.getElementById('category').value,
-                    descripcion: document.getElementById('desc').value,
-                    ingredientes: document.getElementById('ingredients').value.split(','),
-                    timestamp: serverTimestamp()
-                });
-                alert("¡Plato guardado exitosamente!");
-                e.target.reset();
-            } catch (err) {
-                alert("Error al guardar: " + err.message);
-            }
-        });
-    </script>
+    <script type="module" src="admin-script.js"></script>
 </body>
 </html>
