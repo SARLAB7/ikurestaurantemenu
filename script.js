@@ -36,8 +36,13 @@ const renderMenu = () => {
                 style: 'currency', currency: 'COP', minimumFractionDigits: 0
             }).format(data.precio);
 
-            // Convertimos el array de ingredientes en un texto separado por puntitos
-            const listaIngredientes = data.ingredientes ? data.ingredientes.join(' • ') : 'Consultar con el personal';
+            // PROCESAR INGREDIENTES: Si es lista lo une, si es texto lo deja igual
+            let textoIngredientes = "Consultar con el personal";
+            if (data.ingredientes) {
+                textoIngredientes = Array.isArray(data.ingredientes) 
+                    ? data.ingredientes.join(' • ') 
+                    : data.ingredientes;
+            }
 
             const dishHTML = `
                 <div class="dish-item" onclick="this.classList.toggle('expanded')">
@@ -46,10 +51,10 @@ const renderMenu = () => {
                         <span class="price">${formattedPrice}</span>
                     </div>
                     <div class="expand-content">
-                        <p class="description">${data.descripcion || ''}</p>
+                        <p class="description">${data.descripcion || 'Sin descripción'}</p>
                         <div class="ingredients-box">
-                            <span class="ing-label">Ingredientes:</span>
-                            <p class="ing-list">${listaIngredientes}</p>
+                            <span class="ing-label">INGREDIENTES:</span>
+                            <p class="ing-list">${textoIngredientes}</p>
                         </div>
                     </div>
                 </div>
