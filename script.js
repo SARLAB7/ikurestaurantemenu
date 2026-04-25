@@ -2,7 +2,7 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, onSnapshot, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
 let carrito = [];
-const ICON_TRASH = `<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>`;
+const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
@@ -19,18 +19,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// Función para abrir/cerrar platos usando las clases de tu CSS
 window.toggleDish = (header) => {
     const item = header.parentElement;
-    const isGold = item.classList.contains('gold-active');
+    const isActive = item.classList.contains('active');
     
-    document.querySelectorAll('.dish-item').forEach(i => {
-        i.classList.remove('gold-active');
-        i.querySelector('.expand-content').style.display = 'none';
-    });
+    // Cerramos cualquier otro plato abierto
+    document.querySelectorAll('.dish-item').forEach(i => i.classList.remove('active'));
 
-    if (!isGold) {
-        item.classList.add('gold-active');
-        item.querySelector('.expand-content').style.display = 'block';
+    // Si no estaba activo, lo activamos
+    if (!isActive) {
+        item.classList.add('active');
     }
 };
 
@@ -44,33 +43,38 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
     if(sRapida) sRapida.innerHTML = ''; 
     if(sVarios) sVarios.innerHTML = '';
     
-    document.getElementById('loader').style.display = 'none';
+    if(document.getElementById('loader')) {
+        document.getElementById('loader').style.display = 'none';
+    }
 
     sn.docs.forEach(docSnap => {
         const d = docSnap.data();
         if (d.disponible === false) return;
 
-        // Generar etiquetas de ingredientes si existen
+        // Formatear ingredientes como etiquetas
         let ingredientesHTML = '';
         if (d.ingredientes && Array.isArray(d.ingredientes) && d.ingredientes.length > 0) {
-            ingredientesHTML = `<div class="ing-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;">
-                ${d.ingredientes.map(ing => ing ? `<span class="ing-pill" style="background:#eee; padding:2px 8px; border-radius:12px; font-size:0.7rem; color:#555; border:1px solid #ddd;">${ing}</span>` : '').join('')}
+            ingredientesHTML = `<div class="ing-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                ${d.ingredientes.map(ing => ing ? `<span class="ing-pill" style="background:#e2e8f0; padding:2px 8px; border-radius:12px; font-size:0.7rem; color:#475569; border:1px solid #cbd5e1;">${ing}</span>` : '').join('')}
             </div>`;
         }
 
         const html = `
             <div class="dish-item">
                 <div class="dish-header" onclick="toggleDish(this)">
-                    <div style="flex:1; padding-right:10px;">
-                        <h3 style="margin:0; font-size:1.1rem;">${d.nombre}</h3>
-                        <p style="margin:4px 0; font-size:0.85rem; color:#64748b; line-height:1.2;">${d.descripcion || ''}</p>
+                    <div style="flex:1;">
+                        <h3 style="margin:0;">${d.nombre}</h3>
+                        <p style="margin:5px 0; font-size:0.9rem; color:var(--text-muted);">${d.descripcion || ''}</p>
                         ${ingredientesHTML}
                     </div>
-                    <strong class="dish-price" style="color:var(--accent); font-size:1.1rem;">$${Number(d.precio).toLocaleString()}</strong>
+                    <strong class="dish-price">$${Number(d.precio).toLocaleString()}</strong>
                 </div>
-                <div class="expand-content" style="display:none; padding:15px; background:#f9f9f9; border-top:1px dashed #ddd;">
-                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Alguna nota especial (sin cebolla, término, etc.)?" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;">
-                    <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')" style="width:100%; background:var(--primary); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">
+                <div class="expand-content">
+                    <div class="note-container" style="margin-bottom:15px;">
+                        <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:5px;">¿Alguna nota especial?</label>
+                        <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="Ej: Sin cebolla, término medio..." style="width:100%;">
+                    </div>
+                    <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')">
                         AÑADIR AL PEDIDO
                     </button>
                 </div>
@@ -84,20 +88,29 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
 
 // --- LÓGICA DEL CARRITO ---
 window.agregarAlCarrito = (nombre, precio, id) => {
-    const nota = document.getElementById(`note-${id}`).value;
-    carrito.push({ nombre, precio: Number(precio), nota, id });
-    actualizarInterfazCarrito();
-    document.getElementById(`note-${id}`).value = '';
+    const notaInput = document.getElementById(`note-${id}`);
+    const nota = notaInput ? notaInput.value : '';
     
-    // Feedback visual simple
+    carrito.push({ 
+        nombre, 
+        precio: Number(precio), 
+        nota, 
+        id 
+    });
+    
+    actualizarInterfazCarrito();
+    if(notaInput) notaInput.value = '';
+    
+    // Feedback visual y cerrar el plato
     const btn = event.target;
     const originalText = btn.innerText;
-    btn.innerText = "¡AGREGADO!";
+    btn.innerText = "✓ AGREGADO";
     btn.style.background = "var(--success)";
+    
     setTimeout(() => {
         btn.innerText = originalText;
-        btn.style.background = "var(--primary)";
-        toggleDish(btn.parentElement.previousElementSibling);
+        btn.style.background = ""; // Vuelve al color del CSS
+        document.querySelectorAll('.dish-item').forEach(i => i.classList.remove('active'));
     }, 800);
 };
 
@@ -123,7 +136,7 @@ function renderizarListaCarrito() {
         div.innerHTML = `
             <div style="flex:1">
                 <strong>${item.nombre}</strong>
-                <p style="font-size:0.8rem; color:gray; margin:0;">${item.nota ? '📝 ' + item.nota : 'Sin notas'}</p>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">${item.nota ? '📝 ' + item.nota : 'Sin notas'}</p>
             </div>
             <div style="text-align:right">
                 <span style="display:block; font-weight:bold;">$${item.precio.toLocaleString()}</span>
@@ -148,12 +161,12 @@ window.cerrarCarrito = () => {
 };
 
 window.enviarPedido = async () => {
-    if (carrito.length === 0) return alert("El carrito está vacío");
+    if (carrito.length === 0) return alert("Tu carrito está vacío");
 
     const nombreCliente = document.getElementById('nombre-cliente').value;
     const tipoServicio = document.getElementById('tipo-servicio').value;
 
-    if (!nombreCliente) return alert("Por favor dinos tu nombre o mesa");
+    if (!nombreCliente) return alert("Por favor ingresa tu nombre o número de mesa");
 
     const pedido = {
         cliente: nombreCliente,
@@ -167,7 +180,6 @@ window.enviarPedido = async () => {
     try {
         await addDoc(collection(db, "pedidos"), pedido);
         
-        // Si el respaldo de WhatsApp está activo
         if(document.getElementById('check-whatsapp')?.checked) {
             enviarWhatsApp(pedido);
         }
@@ -177,8 +189,8 @@ window.enviarPedido = async () => {
         cerrarCarrito();
         abrirTracker();
     } catch (e) {
-        console.error("Error al enviar: ", e);
-        alert("Hubo un error al procesar tu pedido.");
+        console.error("Error al enviar pedido: ", e);
+        alert("Hubo un error al procesar tu pedido. Intenta de nuevo.");
     }
 };
 
@@ -188,7 +200,8 @@ function enviarWhatsApp(p) {
         msg += `• ${i.nombre} ($${i.precio.toLocaleString()})${i.nota ? ' _Nota: ' + i.nota + '_' : ''}%0A`;
     });
     msg += `---%0A*TOTAL: $${p.total.toLocaleString()}*`;
-    window.open(`https://wa.me/573000000000?text=${msg}`, '_blank'); // Cambia el número por el del local
+    // Aquí puedes poner el número de WhatsApp de IKU
+    window.open(`https://wa.me/573000000000?text=${msg}`, '_blank');
 }
 
 window.abrirTracker = () => {
@@ -199,7 +212,7 @@ window.cerrarTracker = () => {
     document.getElementById('tracker-modal').classList.remove('active');
 };
 
-// Manejo de pestañas (Tabs)
+// Control de pestañas (Menú del día, Comidas rápidas, etc)
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
