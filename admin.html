@@ -36,8 +36,11 @@
                         <div id="l-pendientes"></div>
                     </div>
                     <div style="flex: 1; min-width: 300px;">
-                        <h3 style="margin-bottom: 20px; color: var(--success);">🟢 Atendidos Hoy</h3>
-                        <div id="l-atendidos"></div>
+                        <h3 onclick="toggleAtendidos()" style="margin-bottom: 20px; color: var(--success); cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                            <span>🟢 Atendidos Hoy</span>
+                            <span id="chevron-atendidos" style="transition: transform 0.3s ease; font-size: 14px;">▼</span>
+                        </h3>
+                        <div id="l-atendidos" class="lista-atendidos-oculta"></div>
                     </div>
                 </div>
             </section>
@@ -125,18 +128,35 @@
 
     <script type="module" src="admin-script.js"></script>
     <script>
+        // Función para cambiar entre las vistas del menú lateral
         function cambiarVista(id, el) {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            // Al cambiar de pestaña en móvil, sube el scroll arriba
+            
             if(window.innerWidth <= 768) {
                 document.querySelector('.main-content').scrollTop = 0;
             }
         }
+
+        // Función para abrir/cerrar las categorías en el inventario
         function toggleSeccion(header) { 
             header.parentElement.classList.toggle('open'); 
+        }
+
+        // Función para minimizar/expandir la lista de pedidos atendidos hoy
+        function toggleAtendidos() {
+            const lista = document.getElementById('l-atendidos');
+            const chevron = document.getElementById('chevron-atendidos');
+            
+            if (lista.classList.contains('lista-atendidos-oculta')) {
+                lista.classList.remove('lista-atendidos-oculta');
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                lista.classList.add('lista-atendidos-oculta');
+                chevron.style.transform = 'rotate(0deg)';
+            }
         }
     </script>
 </body>
