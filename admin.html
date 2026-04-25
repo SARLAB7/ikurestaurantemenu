@@ -2,83 +2,180 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IKU Admin | Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root { --sidebar: #0f1115; --accent: #ffcc00; --bg: #f8fafc; --white: #ffffff; --success: #22c55e; --danger: #ef4444; --text: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
+        
+        /* Layout Principal */
+        #admin-panel { display: flex; width: 100vw; height: 100vh; }
+
+        /* Sidebar (Desktop) */
+        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; z-index: 100; transition: 0.3s; }
+        .sidebar h2 { color: var(--accent); text-align: center; margin-bottom: 40px; letter-spacing: 4px; font-weight: 700; }
+        .nav-item { padding: 16px 28px; cursor: pointer; color: #94a3b8; transition: 0.3s; border-left: 4px solid transparent; display: flex; align-items: center; gap: 12px; }
+        .nav-item.active { background: #1e293b; color: white; border-left-color: var(--accent); }
+
+        /* Contenido Principal */
+        .main-content { flex: 1; height: 100vh; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
+        .view-section { display: none; width: 100%; max-width: 1000px; margin: 0 auto; }
+        .view-section.active { display: block; }
+
+        /* Elementos UI */
+        .pedido-card { background: white; padding: 20px; border-radius: 16px; border-left: 5px solid var(--accent); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .admin-group { margin-bottom: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; background: white; }
+        .admin-group-header { background: #fff; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .admin-group-content { display: none; border-top: 1px solid #f1f5f9; }
+        .admin-group.open .admin-group-content { display: block; }
+        .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .stat-card { padding: 25px; border-radius: 15px; }
+
+        /* Formulario */
+        #m-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+
+        /* Switch */
+        .switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 34px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
+        .switch input:checked + .slider { background-color: var(--success); }
+        .switch input:checked + .slider:before { transform: translateX(18px); }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 5000; padding: 20px; }
+        .modal-card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; }
+
+        /* --- RESPONSIVE (Móvil) --- */
+        @media (max-width: 768px) {
+            #admin-panel { flex-direction: column; }
+            
+            .sidebar {
+                width: 100%;
+                height: 70px;
+                flex-direction: row;
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                padding: 0;
+                justify-content: space-around;
+                box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+            }
+            .sidebar h2 { display: none; }
+            .nav-item { flex: 1; flex-direction: column; padding: 10px; gap: 4px; font-size: 0.7rem; border-left: none; border-top: 4px solid transparent; text-align: center; justify-content: center; }
+            .nav-item.active { border-top-color: var(--accent); background: #1e293b; }
+
+            .main-content { padding: 20px; padding-bottom: 100px; }
+            
+            .stats-grid, #m-form, #rankings-categoria { grid-template-columns: 1fr !important; }
+            .full-width { grid-column: span 1; }
+            
+            .stat-card { padding: 20px; }
+            .admin-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .actions { width: 100%; justify-content: space-between; }
+            
+            h1, h2 { font-size: 1.5rem; }
+        }
+
+        #login-screen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+    </style>
 </head>
-<body style="overflow: hidden;">
+<body>
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
-    <div id="delete-modal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 5000;">
-        <div class="modal-card" style="background: white; padding: 30px; border-radius: 20px; text-align: center;">
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal-card">
             <h3 id="modal-title">¿Confirmar?</h3>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeModal()" style="flex:1; padding:10px; border-radius:10px; border:none; background:#eee;">No</button>
-                <button id="confirm-delete-btn" style="flex:1; padding:10px; border-radius:10px; border:none; background:#ef4444; color:white;">Sí</button>
+                <button onclick="closeModal()" style="flex:1; padding:12px; border-radius:10px; border:none; background:#eee;">Cancelar</button>
+                <button id="confirm-delete-btn" style="flex:1; padding:12px; border-radius:10px; border:none; background:var(--danger); color:white; font-weight:700;">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <div id="login-screen" style="position: fixed; inset: 0; background: #0f1115; display: flex; align-items: center; justify-content: center; z-index: 2000;">
-        <div style="background:white; padding:40px; border-radius:20px; text-align:center;">
-            <h1>IKU ADMIN</h1>
-            <button id="login-btn" style="background:#000; color:#ffcc00; padding:12px 30px; border:none; border-radius:10px; margin-top:20px; cursor:pointer;">INGRESAR</button>
+    <div id="login-screen">
+        <div style="background:white; padding:40px; border-radius:20px; text-align:center; width: 90%; max-width: 350px;">
+            <h1 style="margin-bottom: 10px;">IKU</h1>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Panel de Administración</p>
+            <button id="login-btn" style="background:#000; color:#fc0; width: 100%; padding:15px; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">INGRESAR CON GOOGLE</button>
         </div>
     </div>
 
-    <div id="admin-panel" style="display: none; width: 100vw; height: 100vh; background: #f8fafc;">
-        <aside class="sidebar" style="width: 260px; background: #0f1115; color: white; display: flex; flex-direction: column; padding: 20px 0;">
-            <h2 style="color:#ffcc00; text-align:center; margin-bottom:40px;">IKU</h2>
-            <div class="nav-item active" onclick="cambiarVista('v-pedidos', this)" style="padding: 15px 30px; cursor: pointer;">🔔 Pedidos</div>
-            <div class="nav-item" onclick="cambiarVista('v-menu', this)" style="padding: 15px 30px; cursor: pointer;">🍔 Inventario</div>
-            <div class="nav-item" onclick="cambiarVista('v-stats', this)" style="padding: 15px 30px; cursor: pointer;">📊 Estadísticas</div>
+    <div id="admin-panel" style="display: none;">
+        <aside class="sidebar">
+            <h2>IKU</h2>
+            <div class="nav-item active" onclick="cambiarVista('v-pedidos', this)">
+                <span style="font-size: 1.2rem;">🔔</span> Pedidos
+            </div>
+            <div class="nav-item" onclick="cambiarVista('v-menu', this)">
+                <span style="font-size: 1.2rem;">🍔</span> Inventario
+            </div>
+            <div class="nav-item" onclick="cambiarVista('v-stats', this)">
+                <span style="font-size: 1.2rem;">📊</span> Estadísticas
+            </div>
         </aside>
 
-        <main class="main-content" style="flex: 1; height: 100vh; overflow-y: auto; padding: 40px;">
+        <main class="main-content">
             <section id="v-pedidos" class="view-section active">
                 <div id="l-pendientes"></div>
-                <div class="admin-group" id="g-despachados" style="margin-top:40px;">
-                    <div class="admin-group-header" onclick="toggleSeccion(this)" style="padding: 15px; cursor: pointer; border: 1px dashed #ccc;">
+                <div class="admin-group" id="g-despachados" style="margin-top:30px;">
+                    <div class="admin-group-header" onclick="toggleSeccion(this)">
                         <h4 style="color:#94a3b8; margin:0;">✅ DESPACHADOS (HOY)</h4>
+                        <span>▼</span>
                     </div>
                     <div class="admin-group-content"><div id="l-atendidos"></div></div>
                 </div>
             </section>
 
             <section id="v-menu" class="view-section">
-                <div style="background:white; padding:30px; border-radius:20px; margin-bottom:30px;">
-                    <h3 id="f-title">➕ Gestionar Carta</h3>
-                    <form id="m-form" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div style="background:white; padding:25px; border-radius:20px; margin-bottom:30px; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
+                    <h3 id="f-title" style="margin-bottom: 20px;">➕ Gestionar Carta</h3>
+                    <form id="m-form">
                         <input type="hidden" id="edit-id">
-                        <input type="text" id="name" placeholder="Nombre" required>
+                        <input type="text" id="name" placeholder="Nombre del plato" required>
                         <input type="number" id="price" placeholder="Precio ($)" required>
-                        <select id="category"><option value="diario">Menú del Día</option><option value="rapida">Comidas Rápidas</option><option value="varios">Varios</option></select>
+                        <select id="category">
+                            <option value="diario">Menú del Día</option>
+                            <option value="rapida">Comidas Rápidas</option>
+                            <option value="varios">Varios</option>
+                        </select>
                         <input type="number" id="stock" placeholder="Stock Inicial" required>
-                        <textarea id="desc" placeholder="Descripción..." style="grid-column: span 2;"></textarea>
-                        <input type="text" id="ingredients" placeholder="Ingredientes (con coma)" style="grid-column: span 2;">
-                        <button type="submit" class="btn-save" style="grid-column: span 2; background:#000; color:#fc0; padding:15px; border:none; border-radius:10px; cursor:pointer;">GUARDAR</button>
+                        <textarea id="desc" placeholder="Descripción corta..." class="full-width" style="height: 80px;"></textarea>
+                        <input type="text" id="ingredients" placeholder="Ingredientes (separados por coma)" class="full-width">
+                        <div class="full-width" style="display:flex; gap:10px;">
+                            <button type="submit" class="btn-save" style="flex:2;">GUARDAR</button>
+                            <button type="button" onclick="cancelarEdicion()" style="flex:1; border-radius:12px; border:none; background:#f1f5f9;">X</button>
+                        </div>
                     </form>
                 </div>
                 <div id="inv-list"></div>
             </section>
 
             <section id="v-stats" class="view-section">
-                <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div class="stat-card" style="background:#0f1115; color:#fc0; padding:30px; border-radius:15px;">HOY<h2 id="s-hoy">$0</h2></div>
-                    <div class="stat-card" style="background:#22c55e; color:white; padding:30px; border-radius:15px;">MES<h2 id="s-mes">$0</h2></div>
+                <div class="stats-grid">
+                    <div class="stat-card" style="background:#0f1115; color:#fc0;"><p style="font-size: 0.8rem; opacity: 0.8;">HOY</p><h2 id="s-hoy">$0</h2></div>
+                    <div class="stat-card" style="background:#22c55e; color:white;"><p style="font-size: 0.8rem; opacity: 0.8;">MES</p><h2 id="s-mes">$0</h2></div>
                 </div>
                 <div style="background:white; padding:20px; border-radius:15px; margin-bottom:20px;">
-                    <h4>🧾 Cierre por Métodos</h4>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <div style="flex:1; background:#f8fafc; padding:10px; border-radius:10px;">🟣 Nequi: <strong id="s-nequi">$0</strong></div>
-                        <div style="flex:1; background:#f8fafc; padding:10px; border-radius:10px;">🟡 Banc.: <strong id="s-bancolombia">$0</strong></div>
-                        <div style="flex:1; background:#f8fafc; padding:10px; border-radius:10px;">💵 Efec.: <strong id="s-efectivo">$0</strong></div>
+                    <h4 style="margin-bottom:15px; font-size: 0.9rem;">🧾 Cierre de Caja por Métodos</h4>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px;">
+                        <div style="background:#f8fafc; padding:15px; border-radius:12px;">🟣 Nequi<br><strong id="s-nequi">$0</strong></div>
+                        <div style="background:#f8fafc; padding:15px; border-radius:12px;">🟡 Bancolombia<br><strong id="s-bancolombia">$0</strong></div>
+                        <div style="background:#f8fafc; padding:15px; border-radius:12px;">💵 Efectivo<br><strong id="s-efectivo">$0</strong></div>
                     </div>
                 </div>
                 <div id="rankings-categoria" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:20px;"></div>
-                <div id="rankings-ingredientes" style="display:flex; flex-wrap:wrap; gap:10px; background:white; padding:20px; border-radius:15px;"></div>
-                <button id="btn-reset-stats" onclick="triggerResetStats()" style="display:none; width:100%; margin-top:20px; padding:15px; border:2px dashed #ef4444; color:#ef4444; background:none; cursor:pointer;">⚠️ CERRAR CAJA (Reiniciar Todo)</button>
+                <div style="background:white; padding:20px; border-radius:15px;">
+                    <h4 style="margin-bottom:15px; font-size: 0.9rem;">🛒 Alerta de Compras (Ingredientes Top)</h4>
+                    <div id="rankings-ingredientes" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                </div>
+                <button id="btn-reset-stats" onclick="triggerResetStats()" style="display:none; width:100%; margin-top:30px; padding:15px; border:2px dashed var(--danger); color:var(--danger); background:none; border-radius:12px; font-weight:bold; cursor:pointer;">⚠️ CERRAR CAJA DIARIA</button>
             </section>
         </main>
     </div>
@@ -90,6 +187,8 @@
             el.classList.add('active');
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            // En móvil, sube el scroll al cambiar de vista
+            document.querySelector('.main-content').scrollTop = 0;
         }
         function toggleSeccion(header) { header.parentElement.classList.toggle('open'); }
         function closeModal() { document.getElementById('delete-modal').style.display = 'none'; }
