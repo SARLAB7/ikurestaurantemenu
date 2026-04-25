@@ -1,4 +1,4 @@
- import { db, auth } from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDoc, getDocs, serverTimestamp, writeBatch, addDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
@@ -169,11 +169,45 @@ window.completar = (id) => updateDoc(doc(db, "pedidos", id), { estado: 'completa
 window.toggleStock = (id, val) => updateDoc(doc(db, "platos", id), { disponible: val });
 
 let currentAction = null; let targetId = null;
-window.triggerDelete = (id) => { currentAction = 'deletePlato'; targetId = id; document.getElementById('modal-title').innerText = "¿Eliminar?"; document.getElementById('delete-modal').style.display = 'flex'; };
-window.closeModal = () => { document.getElementById('delete-modal').style.display = 'none'; currentAction = null; targetId = null; };
+
+window.triggerDelete = (id) => { 
+    currentAction = 'deletePlato'; 
+    targetId = id; 
+    document.getElementById('modal-title').innerText = "¿Eliminar este plato de la carta?"; 
+    document.getElementById('delete-modal').style.display = 'flex'; 
+};
+
+// NUEVO: Función para disparar el reseteo global
+window.triggerResetStats = () => { 
+    currentAction = 'resetStats'; 
+    document.getElementById('modal-title').innerText = "⚠️ ¿Borrar TODOS los pedidos y estadísticas?"; 
+    document.getElementById('delete-modal').style.display = 'flex'; 
+};
+
+window.closeModal = () => { 
+    document.getElementById('delete-modal').style.display = 'none'; 
+    currentAction = null; 
+    targetId = null; 
+};
 
 document.getElementById('confirm-delete-btn').onclick = async () => {
-    if (currentAction === 'deletePlato' && targetId) await deleteDoc(doc(db, "platos", targetId));
+    try {
+        if (currentAction === 'deletePlato' && targetId) {
+            await deleteDoc(doc(db, "platos", targetId));
+        } 
+        else if (currentAction === 'resetStats' && auth.currentUser.email === CORREO_MASTER) {
+            // Borra todos los pedidos, lo que automáticamente reinicia las estadísticas a 0
+            const q = await getDocs(collection(db, "pedidos")); 
+            
+            // Usamos Promise.all en lugar de batch para evitar el límite de 500 documentos de Firebase
+            await Promise.all(q.docs.map(d => deleteDoc(d.ref))); 
+            
+            alert("✅ Todas las estadísticas y pedidos han sido reiniciados.");
+        }
+    } catch (error) {
+        alert("Hubo un error al ejecutar la acción.");
+        console.error(error);
+    }
     closeModal();
 };
 
@@ -216,6 +250,13 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
+        
+        // Control de seguridad visual: Solo cb01grupo@gmail.com ve el botón rojo
+        const btnReset = document.getElementById('btn-reset-stats');
+        if(btnReset) {
+            btnReset.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
+        }
+
         escucharPedidos(); escucharCarta();
     } else {
         if(u) signOut(auth);
