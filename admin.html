@@ -16,7 +16,10 @@
         .main-content { flex: 1; height: 100vh; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
         .view-section { display: none; width: 100%; max-width: 1000px; margin: 0 auto; }
         .view-section.active { display: block; }
+        
         .pedido-card { background: white; padding: 25px; border-radius: 16px; border-left: 6px solid var(--accent); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .pedido-card.preparando { border-left-color: #3b82f6; } /* Color para estado en preparación */
+        
         .item-nota { font-size: 0.85rem; color: #d63031; font-weight: 600; font-style: italic; background: #fff5f5; padding: 6px 12px; border-radius: 8px; display: block; margin-top: 8px; border-left: 3px solid #ff7675; }
         .admin-group { margin-bottom: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; background: white; }
         .admin-group-header { background: #fff; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -33,7 +36,6 @@
         .stat-card { padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
         #login-screen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         
-        /* Switch CSS */
         .switch { position: relative; display: inline-block; width: 42px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 34px; transition: .4s; }
@@ -95,7 +97,8 @@
                         <input type="text" id="name" placeholder="Nombre" required>
                         <input type="number" id="price" placeholder="Precio ($)" required>
                         <select id="category"><option value="diario">Menú del Día</option><option value="rapida">Comidas Rápidas</option><option value="varios">Varios</option></select>
-                        <input type="text" id="ingredients" placeholder="Ingredientes (con coma)">
+                        <input type="number" id="stock" placeholder="Porciones Disp. (Ej: 20)" required>
+                        <input type="text" id="ingredients" placeholder="Ingredientes (con coma)" style="grid-column: span 2;">
                         <textarea id="desc" placeholder="Descripción corta..." style="grid-column: span 2; height: 90px;"></textarea>
                         <div style="grid-column: span 2; display:flex; gap:10px;">
                             <button type="submit" class="btn-save" style="flex:2;">GUARDAR</button>
@@ -108,9 +111,19 @@
 
             <section id="v-stats" class="view-section">
                 <div class="stats-grid">
-                    <div class="stat-card" style="background:var(--sidebar); color:var(--accent);"><p>HOY</p><h2 id="s-hoy">$0</h2></div>
-                    <div class="stat-card" style="background:var(--success); color:white;"><p>MES</p><h2 id="s-mes">$0</h2></div>
+                    <div class="stat-card" style="background:var(--sidebar); color:var(--accent);"><p>VENTAS HOY</p><h2 id="s-hoy">$0</h2></div>
+                    <div class="stat-card" style="background:var(--success); color:white;"><p>VENTAS MES</p><h2 id="s-mes">$0</h2></div>
                 </div>
+
+                <div style="background:white; padding:30px; border-radius:20px; margin-bottom:20px;">
+                    <h4 style="margin-bottom:15px; color:#334155;">🧾 Reporte Z Diario (Métodos de pago)</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="padding:15px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;"><p style="font-size:0.75rem; color:#64748b; font-weight:bold;">🟣 NEQUI</p><h3 id="s-nequi" style="font-size:1.2rem;">$0</h3></div>
+                        <div style="padding:15px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;"><p style="font-size:0.75rem; color:#64748b; font-weight:bold;">🟡 BANCOLOMBIA</p><h3 id="s-bancolombia" style="font-size:1.2rem;">$0</h3></div>
+                        <div style="padding:15px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;"><p style="font-size:0.75rem; color:#64748b; font-weight:bold;">💵 EFECTIVO</p><h3 id="s-efectivo" style="font-size:1.2rem;">$0</h3></div>
+                    </div>
+                </div>
+
                 <div id="rankings-categoria" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; background:white; padding:30px; border-radius:20px; margin-bottom:20px;"></div>
                 <div style="background:white; padding:30px; border-radius:20px;">
                     <h4 style="margin-bottom:20px;">🛒 Alerta de Compras (Top Ingredientes)</h4>
@@ -118,7 +131,7 @@
                 </div>
 
                 <button id="btn-reset-stats" onclick="triggerResetStats()" style="display:none; width:100%; margin-top:30px; padding:20px; background:#fff0f0; color:var(--danger); border:2px dashed var(--danger); border-radius:16px; font-weight:bold; cursor:pointer; transition:0.3s;">
-                    ⚠️ REINICIAR TODAS LAS ESTADÍSTICAS (Borrar todo el historial)
+                    ⚠️ REINICIAR TODAS LAS ESTADÍSTICAS
                 </button>
             </section>
         </main>
