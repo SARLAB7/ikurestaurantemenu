@@ -40,10 +40,21 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
 
 .lista-atendidos-oculta { display: none; }
 
+/* Switch de Disponibilidad */
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 34px; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
+.switch input:checked + .slider { background-color: var(--success); }
+.switch input:checked + .slider:before { transform: translateX(18px); }
+
 .mesas-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; margin-top: 20px; }
 .mesa-card { background: var(--white); border: 2px solid var(--border); border-radius: 12px; padding: 24px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; }
 .mesa-libre { border-color: var(--success); }
 .mesa-ocupada { border-color: var(--accent); background-color: #fffbeb; }
+
+/* NUEVO: Ocultar listas del menú */
+.lista-categoria-oculta { display: none; }
 
 @media print {
     body * { visibility: hidden; }
