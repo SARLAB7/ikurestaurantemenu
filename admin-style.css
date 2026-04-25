@@ -53,7 +53,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
 .mesa-libre { border-color: var(--success); }
 .mesa-ocupada { border-color: var(--accent); background-color: #fffbeb; }
 
-/* NUEVO: Ocultar listas del menú */
+/* Ocultar listas del menú */
 .lista-categoria-oculta { display: none; }
 
 @media print {
