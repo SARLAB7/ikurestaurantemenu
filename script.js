@@ -3,6 +3,7 @@ import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 
 
 let carrito = [];
 
+// Notificaciones Toast
 const toastDiv = document.createElement('div');
 toastDiv.id = 'toast';
 document.body.appendChild(toastDiv);
@@ -13,6 +14,7 @@ const mostrarNotificacion = (mensaje) => {
     setTimeout(() => { toastDiv.classList.remove("show"); }, 3000);
 };
 
+// Acordeón de platos
 window.toggleDish = (header) => {
     const dish = header.parentElement;
     const isOpened = dish.classList.contains('expanded');
@@ -20,6 +22,7 @@ window.toggleDish = (header) => {
     if (!isOpened) dish.classList.add('expanded');
 };
 
+// Carrito
 window.toggleCart = () => {
     const modal = document.getElementById('cart-modal');
     if(modal) modal.classList.toggle('open');
@@ -69,7 +72,7 @@ window.enviarPedido = async () => {
     const quiereWhatsApp = document.getElementById('check-whatsapp')?.checked;
 
     if (!mesaDireccion || carrito.length === 0) { 
-        alert("Por favor ingresa tu nombre/mesa y añade productos."); 
+        alert("Ingresa tu nombre/mesa y añade productos."); 
         return; 
     }
 
@@ -86,24 +89,32 @@ window.enviarPedido = async () => {
         });
 
         if (quiereWhatsApp) {
-            const textoWA = `*IKU - NUEVO PEDIDO*%0A------------------%0A*Cliente:* ${mesaDireccion}%0A*Servicio:* ${tipoServicio.toUpperCase()}%0A*Items:*%0A${carrito.map(i => `- ${i.nombre} (${i.nota || 'Sin nota'})`).join('%0A')}%0A%0A*Total:* $${total.toLocaleString()}`;
-            const numeroIKU = "573210000000"; // CAMBIA ESTE NÚMERO POR EL TUYO
-            window.open(`https://wa.me/${numeroIKU}?text=${textoWA}`);
+            const textoWA = `*IKU - NUEVO PEDIDO*%0A*Cliente:* ${mesaDireccion}%0A*Items:*%0A${carrito.map(i => `- ${i.nombre}`).join('%0A')}%0A*Total:* $${total.toLocaleString()}`;
+            window.open(`https://wa.me/573210000000?text=${textoWA}`);
         }
 
-        mostrarNotificacion("¡Pedido enviado con éxito! 🧑‍🍳"); 
+        mostrarNotificacion("¡Pedido enviado! 🧑‍🍳"); 
         carrito = []; 
         actualizarCarrito(); 
         window.toggleCart();
     } catch (e) { 
-        mostrarNotificacion("Error al conectar con la cocina."); 
+        mostrarNotificacion("Error de conexión."); 
     }
 };
 
+// ESCUCHA DE PLATOS POR CATEGORÍA
 onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) => {
-    const cats = { diario: '', rapida: '', varios: '' };
     const loader = document.getElementById('loader');
     if(loader) loader.style.display = 'none';
+
+    // Limpiamos los contenedores antes de renderizar
+    const divs = {
+        diario: document.getElementById('diario'),
+        rapida: document.getElementById('rapida'),
+        varios: document.getElementById('varios')
+    };
+
+    Object.values(divs).forEach(d => { if(d) d.innerHTML = ''; });
 
     sn.docs.forEach(docSnap => {
         const d = docSnap.data();
@@ -116,29 +127,39 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
                         <h3>${d.nombre}</h3>
                         <p class="dish-desc-short">${d.descripcion || ''}</p>
                     </div>
-                    <strong class="dish-price">$${d.precio.toLocaleString()}</strong>
+                    <strong class="dish-price">$${Number(d.precio).toLocaleString()}</strong>
                 </div>
                 <div class="expand-content">
-                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Alguna nota especial?">
+                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Nota especial?">
                     <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')">AÑADIR AL PEDIDO</button>
                 </div>
             </div>`;
         
-        if (cats.hasOwnProperty(d.categoria)) cats[d.categoria] += html;
+        if (divs[d.categoria]) {
+            divs[d.categoria].innerHTML += html;
+        }
     });
 
-    ['diario', 'rapida', 'varios'].forEach(id => {
-        const div = document.getElementById(id);
-        if(div) div.innerHTML = cats[id] || '<p class="empty-msg">No hay platos disponibles.</p>';
+    // Mensaje si una categoría está vacía
+    Object.keys(divs).forEach(key => {
+        if (divs[key] && divs[key].innerHTML === '') {
+            divs[key].innerHTML = '<p class="empty-msg">No hay platos disponibles en esta sección.</p>';
+        }
     });
 });
 
+// LOGICA DE PESTAÑAS
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
+        // Quitar active de todos los botones
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Quitar active de todas las secciones
         document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
+        
+        // Agregar active al actual
         btn.classList.add('active');
-        const target = document.getElementById(btn.dataset.tab);
-        if(target) target.classList.add('active');
+        const targetId = btn.getAttribute('data-tab');
+        const targetSection = document.getElementById(targetId);
+        if(targetSection) targetSection.classList.add('active');
     };
 });
