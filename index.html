@@ -2,27 +2,26 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IKU Restaurante Bar | Menú</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IKU | Menú Interactivo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div class="container">
-        <header class="hero">
-            <div class="brand-header">
-                <p class="overline">BIENVENIDO A</p>
+        <aside class="hero">
+            <div>
+                <span class="overline">Bienvenidos a</span>
                 <h1>IKU</h1>
-                <p>RESTAURANTE BAR</p>
+                <p class="brand-sub">RESTAURANTE BAR</p>
             </div>
             <div class="info-box">
-                <p>📍 <strong>Pueblo Bello, Cesar</strong></p>
-                <div class="schedule">
-                    <p>🕒 Lun - Vie: 7:00 am - 4:00 pm</p>
-                    <p>🕒 Sáb - Dom: 7:00 am - 10:00 pm</p>
-                </div>
+                <p class="location">📍 Pueblo Bello, Cesar</p>
+                <p class="schedule">Lun - Dom: 11:00 AM - 10:00 PM</p>
+                <p class="tagline">Sabor de la Sierra</p>
             </div>
-        </header>
+        </aside>
 
         <main class="menu-content">
             <nav class="tabs">
@@ -32,6 +31,7 @@
             </nav>
 
             <div id="loader" class="loader">Cargando delicias...</div>
+
             <section id="diario" class="menu-section active"></section>
             <section id="rapida" class="menu-section"></section>
             <section id="varios" class="menu-section"></section>
@@ -39,25 +39,53 @@
     </div>
 
     <div class="cart-fab" onclick="toggleCart()">
-        <span class="cart-count" id="cart-count">0</span>
+        <span id="cart-count">0</span>
         🛒
     </div>
 
     <div id="cart-modal" class="cart-modal">
         <div class="cart-header">
-            <h3>Tu Pedido en IKU</h3>
-            <button onclick="toggleCart()" class="close-cart">✕</button>
+            <h3>Tu Pedido</h3>
+            <button class="close-cart" onclick="toggleCart()">×</button>
         </div>
-        <div id="cart-items" class="cart-items-list"></div>
+        
+        <div class="cart-items-list" id="cart-items">
+            </div>
+
         <div class="cart-footer">
             <div class="total-row">
                 <span>Total:</span>
                 <span id="cart-total-price">$0</span>
             </div>
-            <button class="btn-send-order" onclick="enviarPedido()">CONFIRMAR PEDIDO</button>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 0.8rem; font-weight: bold; color: #666; display: block; margin-bottom: 8px;">TIPO DE SERVICIO:</label>
+                <select id="tipo-servicio" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;" onchange="ajustarPlaceholder()">
+                    <option value="mesa">🍽️ Mesa (Comer aquí)</option>
+                    <option value="domicilio">🛵 Domicilio</option>
+                </select>
+
+                <input type="text" id="nombre-cliente" placeholder="Nombre y # de Mesa" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
+
+                <div style="display: flex; align-items: center; gap: 10px; background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bcf0da;">
+                    <input type="checkbox" id="check-whatsapp" checked style="width: 20px; height: 20px; cursor: pointer;">
+                    <label for="check-whatsapp" style="font-size: 0.85rem; cursor: pointer;">Enviar respaldo por <strong>WhatsApp</strong></label>
+                </div>
+            </div>
+
+            <button class="btn-send-order" onclick="enviarPedido()">
+                <span>CONFIRMAR PEDIDO</span>
+            </button>
         </div>
     </div>
 
     <script type="module" src="script.js"></script>
+    <script>
+        function ajustarPlaceholder() {
+            const tipo = document.getElementById('tipo-servicio').value;
+            const input = document.getElementById('nombre-cliente');
+            input.placeholder = (tipo === 'mesa') ? "Nombre y # de Mesa" : "Nombre y Dirección exacta";
+        }
+    </script>
 </body>
 </html>
