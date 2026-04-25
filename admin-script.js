@@ -1,9 +1,13 @@
+/* =========================================
+   LOGICA DEL PANEL ADMIN - IKU PUEBLO BELLO
+   ========================================= */
 import { db, auth } from './firebase-config.js';
 import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
 const correosAutorizados = ["cb01grupo@gmail.com", "kelly.araujotafur@gmail.com"];
 
+// --- 1. RENDERIZAR MENÚ ---
 const escucharMenu = () => {
     const q = query(collection(db, "platos"), orderBy("timestamp", "desc"));
     onSnapshot(q, (sn) => {
@@ -37,6 +41,7 @@ const escucharMenu = () => {
     });
 };
 
+// --- 2. RENDERIZAR PEDIDOS ---
 const escucharPedidos = () => {
     const q = query(collection(db, "pedidos"), orderBy("timestamp", "desc"));
     onSnapshot(q, (sn) => {
@@ -75,20 +80,20 @@ const escucharPedidos = () => {
     });
 };
 
-// --- LOGICA DE ACCESO ---
+// --- 3. AUTENTICACIÓN ---
 onAuthStateChanged(auth, (user) => {
     const panel = document.getElementById('admin-panel');
     const login = document.getElementById('login-screen');
     
     if (user && correosAutorizados.includes(user.email)) {
-        panel.style.display = 'flex'; 
-        login.style.display = 'none';
+        if(panel) panel.style.display = 'flex'; 
+        if(login) login.style.display = 'none';
         escucharPedidos();
         escucharMenu();
     } else {
         if(user) { alert("Acceso denegado"); signOut(auth); }
-        panel.style.display = 'none';
-        login.style.display = 'flex';
+        if(panel) panel.style.display = 'none';
+        if(login) login.style.display = 'flex';
     }
 });
 
@@ -98,7 +103,7 @@ if (loginBtn) loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvi
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
 
-// --- GESTIÓN DE FORMULARIO ---
+// --- 4. GESTIÓN DEL FORMULARIO (GUARDAR/ACTUALIZAR) ---
 const form = document.getElementById('menu-form');
 if (form) {
     form.onsubmit = async (e) => {
@@ -115,18 +120,23 @@ if (form) {
 
         try {
             if (id) {
+                // Actualiza el plato existente
                 await updateDoc(doc(db, "platos", id), datos);
             } else {
+                // Crea un plato nuevo
                 await addDoc(collection(db, "platos"), datos);
             }
-            // Guarda en silencio y limpia todo
+            // Guarda en silencio, limpia el formulario y lo devuelve a su estado original
             form.reset();
             window.cancelarEdicion();
-        } catch (err) { alert("Error al guardar en la base de datos."); }
+        } catch (err) { 
+            console.error(err);
+            alert("Error al guardar en la base de datos: " + err.message); 
+        }
     };
 }
 
-// --- FUNCIONES GLOBALES (Window) ---
+// --- 5. FUNCIONES GLOBALES (BOTONES) ---
 window.borrarPlato = async (id) => { if(confirm("¿Estás seguro de borrar este plato del menú?")) await deleteDoc(doc(db, "platos", id)); };
 window.completarPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: "completado" });
 window.eliminarPedido = async (id) => { if(confirm("¿Eliminar este pedido del registro?")) await deleteDoc(doc(db, "pedidos", id)); };
@@ -136,6 +146,7 @@ window.prepararEdicion = (id) => {
     onSnapshot(q, (sn) => {
         const d = sn.docs.find(doc => doc.id === id)?.data();
         if(d) {
+            // Llenamos los campos
             document.getElementById('edit-id').value = id;
             document.getElementById('name').value = d.nombre;
             document.getElementById('price').value = d.precio;
@@ -143,24 +154,41 @@ window.prepararEdicion = (id) => {
             document.getElementById('desc').value = d.descripcion || '';
             document.getElementById('ingredients').value = d.ingredientes ? d.ingredientes.join(', ') : '';
             
-            document.getElementById('form-title').innerText = "Editando Plato";
-            document.getElementById('submit-btn').innerText = "Actualizar Cambios";
+            // Cambiamos textos
+            const titleEl = document.getElementById('form-title');
+            if(titleEl) titleEl.innerText = "Editando Plato";
             
-            // Aparece la X
-            document.getElementById('close-edit-btn').style.display = "block";
+            const btnEl = document.getElementById('submit-btn');
+            if(btnEl) btnEl.innerText = "Actualizar Cambios";
             
-            document.querySelector('.content-area').scrollTo({top: 0, behavior: 'smooth'});
+            // Mostramos la X de forma segura (si no existe, no choca)
+            const closeBtn = document.getElementById('close-edit-btn');
+            if(closeBtn) closeBtn.style.display = "block";
+            
+            // Subimos al formulario de forma segura
+            const contentArea = document.querySelector('.content-area');
+            if(contentArea) {
+                contentArea.scrollTo({top: 0, behavior: 'smooth'});
+            } else {
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
         }
     }, {onlyOnce: true});
 };
 
 window.cancelarEdicion = () => {
+    // Limpiamos todo
     document.getElementById('edit-id').value = "";
-    document.getElementById('form-title').innerText = "Añadir Nuevo Plato";
-    document.getElementById('submit-btn').innerText = "Guardar Plato";
     
-    // Desaparece la X
-    document.getElementById('close-edit-btn').style.display = "none";
+    const titleEl = document.getElementById('form-title');
+    if(titleEl) titleEl.innerText = "Añadir Nuevo Plato";
     
-    form.reset();
+    const btnEl = document.getElementById('submit-btn');
+    if(btnEl) btnEl.innerText = "Guardar Plato";
+    
+    // Ocultamos la X de forma segura
+    const closeBtn = document.getElementById('close-edit-btn');
+    if(closeBtn) closeBtn.style.display = "none";
+    
+    if(form) form.reset();
 };
