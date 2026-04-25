@@ -80,7 +80,84 @@ const escucharPedidos = () => {
     });
 };
 
-// --- 3. AUTENTICACIÓN ---
+// --- 3. CALCULAR ESTADÍSTICAS ---
+const escucharEstadisticas = () => {
+    const q = query(collection(db, "pedidos"));
+    
+    onSnapshot(q, (sn) => {
+        let totalHoy = 0;
+        let totalMes = 0;
+        const conteoPlatos = {};
+
+        const hoy = new Date();
+        const mesActual = hoy.getMonth();
+        const anioActual = hoy.getFullYear();
+        const diaActual = hoy.getDate();
+
+        sn.docs.forEach(d => {
+            const p = d.data();
+            
+            // Solo calculamos en base a pedidos completados para no falsear ventas
+            if (p.estado === 'completado' && p.timestamp) {
+                const fechaPedido = p.timestamp.toDate();
+                
+                // Sumar al Mes
+                if (fechaPedido.getMonth() === mesActual && fechaPedido.getFullYear() === anioActual) {
+                    totalMes += p.total;
+                    
+                    // Sumar a Hoy
+                    if (fechaPedido.getDate() === diaActual) {
+                        totalHoy += p.total;
+                    }
+                }
+
+                // Contar cuántas veces se pidió cada plato
+                p.items.forEach(item => {
+                    conteoPlatos[item.nombre] = (conteoPlatos[item.nombre] || 0) + 1;
+                });
+            }
+        });
+
+        // 1. Imprimir Totales
+        const formatoCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+        const vHoyEl = document.getElementById('ventas-hoy');
+        const vMesEl = document.getElementById('ventas-mes');
+        
+        if(vHoyEl) vHoyEl.innerText = formatoCOP.format(totalHoy);
+        if(vMesEl) vMesEl.innerText = formatoCOP.format(totalMes);
+
+        // 2. Ordenar Ranking
+        const platosOrdenados = Object.keys(conteoPlatos).map(nombre => {
+            return { nombre: nombre, cantidad: conteoPlatos[nombre] };
+        }).sort((a, b) => b.cantidad - a.cantidad);
+
+        const topLista = document.getElementById('top-platos');
+        const bottomLista = document.getElementById('bottom-platos');
+        
+        if (topLista && bottomLista) {
+            topLista.innerHTML = '';
+            bottomLista.innerHTML = '';
+            
+            if(platosOrdenados.length > 0) {
+                // Top 5 (Más vendidos)
+                platosOrdenados.slice(0, 5).forEach(p => {
+                    topLista.innerHTML += `<li><strong>${p.nombre}</strong> (${p.cantidad} uds)</li>`;
+                });
+                
+                // Bottom 5 (Menos vendidos)
+                const bottom5 = platosOrdenados.slice(-5).reverse();
+                bottom5.forEach(p => {
+                    bottomLista.innerHTML += `<li><strong>${p.nombre}</strong> (${p.cantidad} uds)</li>`;
+                });
+            } else {
+                topLista.innerHTML = '<li style="list-style: none; color: #888;">Faltan ventas completadas</li>';
+                bottomLista.innerHTML = '<li style="list-style: none; color: #888;">Faltan ventas completadas</li>';
+            }
+        }
+    });
+};
+
+// --- 4. AUTENTICACIÓN ---
 onAuthStateChanged(auth, (user) => {
     const panel = document.getElementById('admin-panel');
     const login = document.getElementById('login-screen');
@@ -90,6 +167,7 @@ onAuthStateChanged(auth, (user) => {
         if(login) login.style.display = 'none';
         escucharPedidos();
         escucharMenu();
+        escucharEstadisticas(); // Iniciamos el motor financiero
     } else {
         if(user) { alert("Acceso denegado"); signOut(auth); }
         if(panel) panel.style.display = 'none';
@@ -103,7 +181,7 @@ if (loginBtn) loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvi
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
 
-// --- 4. GESTIÓN DEL FORMULARIO (GUARDAR/ACTUALIZAR) ---
+// --- 5. GESTIÓN DEL FORMULARIO ---
 const form = document.getElementById('menu-form');
 if (form) {
     form.onsubmit = async (e) => {
@@ -120,23 +198,17 @@ if (form) {
 
         try {
             if (id) {
-                // Actualiza el plato existente
                 await updateDoc(doc(db, "platos", id), datos);
             } else {
-                // Crea un plato nuevo
                 await addDoc(collection(db, "platos"), datos);
             }
-            // Guarda en silencio, limpia el formulario y lo devuelve a su estado original
             form.reset();
             window.cancelarEdicion();
-        } catch (err) { 
-            console.error(err);
-            alert("Error al guardar en la base de datos: " + err.message); 
-        }
+        } catch (err) { alert("Error al guardar en la base de datos."); }
     };
 }
 
-// --- 5. FUNCIONES GLOBALES (BOTONES) ---
+// --- 6. FUNCIONES GLOBALES ---
 window.borrarPlato = async (id) => { if(confirm("¿Estás seguro de borrar este plato del menú?")) await deleteDoc(doc(db, "platos", id)); };
 window.completarPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: "completado" });
 window.eliminarPedido = async (id) => { if(confirm("¿Eliminar este pedido del registro?")) await deleteDoc(doc(db, "pedidos", id)); };
@@ -146,7 +218,6 @@ window.prepararEdicion = (id) => {
     onSnapshot(q, (sn) => {
         const d = sn.docs.find(doc => doc.id === id)?.data();
         if(d) {
-            // Llenamos los campos
             document.getElementById('edit-id').value = id;
             document.getElementById('name').value = d.nombre;
             document.getElementById('price').value = d.precio;
@@ -154,30 +225,22 @@ window.prepararEdicion = (id) => {
             document.getElementById('desc').value = d.descripcion || '';
             document.getElementById('ingredients').value = d.ingredientes ? d.ingredientes.join(', ') : '';
             
-            // Cambiamos textos
             const titleEl = document.getElementById('form-title');
             if(titleEl) titleEl.innerText = "Editando Plato";
             
             const btnEl = document.getElementById('submit-btn');
             if(btnEl) btnEl.innerText = "Actualizar Cambios";
             
-            // Mostramos la X de forma segura (si no existe, no choca)
             const closeBtn = document.getElementById('close-edit-btn');
             if(closeBtn) closeBtn.style.display = "block";
             
-            // Subimos al formulario de forma segura
             const contentArea = document.querySelector('.content-area');
-            if(contentArea) {
-                contentArea.scrollTo({top: 0, behavior: 'smooth'});
-            } else {
-                window.scrollTo({top: 0, behavior: 'smooth'});
-            }
+            if(contentArea) contentArea.scrollTo({top: 0, behavior: 'smooth'});
         }
     }, {onlyOnce: true});
 };
 
 window.cancelarEdicion = () => {
-    // Limpiamos todo
     document.getElementById('edit-id').value = "";
     
     const titleEl = document.getElementById('form-title');
@@ -186,7 +249,6 @@ window.cancelarEdicion = () => {
     const btnEl = document.getElementById('submit-btn');
     if(btnEl) btnEl.innerText = "Guardar Plato";
     
-    // Ocultamos la X de forma segura
     const closeBtn = document.getElementById('close-edit-btn');
     if(closeBtn) closeBtn.style.display = "none";
     
