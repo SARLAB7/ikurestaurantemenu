@@ -3,7 +3,6 @@ import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 
 
 let carrito = [];
 
-// Notificaciones
 const toastDiv = document.createElement('div');
 toastDiv.id = 'toast';
 document.body.appendChild(toastDiv);
@@ -14,7 +13,6 @@ const mostrarNotificacion = (msj) => {
     setTimeout(() => toastDiv.classList.remove("show"), 3000);
 };
 
-// UI Functions
 window.toggleDish = (header) => {
     const dish = header.parentElement;
     const isOpened = dish.classList.contains('expanded');
@@ -61,7 +59,7 @@ window.quitar = (i) => { carrito.splice(i, 1); actualizarCarrito(); };
 window.enviarPedido = async () => {
     const cliente = document.getElementById('nombre-cliente')?.value;
     const tipo = document.getElementById('tipo-servicio')?.value;
-    if (!cliente || carrito.length === 0) return alert("Completa tus datos y añade platos.");
+    if (!cliente || carrito.length === 0) return alert("Completa tus datos.");
 
     const total = carrito.reduce((s, x) => s + x.precio, 0);
     try {
@@ -74,10 +72,9 @@ window.enviarPedido = async () => {
         }
         mostrarNotificacion("¡Pedido enviado! 🧑‍🍳");
         carrito = []; actualizarCarrito(); window.toggleCart();
-    } catch (e) { alert("Error al enviar"); }
+    } catch (e) { alert("Error"); }
 };
 
-// Listener de Platos (AHORA CON INGREDIENTES)
 onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) => {
     const sections = { diario: document.getElementById('diario'), rapida: document.getElementById('rapida'), varios: document.getElementById('varios') };
     Object.values(sections).forEach(s => { if(s) s.innerHTML = ''; });
@@ -87,12 +84,15 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
         const d = docSnap.data();
         if (d.disponible === false) return;
 
-        // Generar el HTML de los ingredientes solo si existen
-        let ingredientesHTML = '';
-        if (d.ingredientes && d.ingredientes.length > 0 && d.ingredientes[0] !== "") {
-            ingredientesHTML = `
-                <div class="ingredients-container" style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 5px;">
-                    ${d.ingredientes.map(ing => `<span style="background: #f1f1f1; color: #555; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; border: 1px solid #eee;">${ing.trim()}</span>`).join('')}
+        // LOGICA DE INGREDIENTES MEJORADA
+        let listaIng = Array.isArray(d.ingredientes) ? d.ingredientes : (d.ingredientes ? d.ingredientes.split(',') : []);
+        let ingHTML = '';
+        
+        // Solo creamos el contenedor si hay ingredientes reales
+        if (listaIng.length > 0 && listaIng[0].trim() !== "") {
+            ingHTML = `
+                <div class="ing-container">
+                    ${listaIng.map(ing => ing.trim() ? `<span class="ing-pill">${ing.trim()}</span>` : '').join('')}
                 </div>`;
         }
 
@@ -101,21 +101,20 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
                 <div class="dish-header" onclick="toggleDish(this)">
                     <div>
                         <h3>${d.nombre}</h3>
-                        <p style="font-size:0.85rem; color:#777;">${d.descripcion || ''}</p>
+                        <p class="dish-desc">${d.descripcion || ''}</p>
                     </div>
                     <strong class="dish-price">$${Number(d.precio).toLocaleString()}</strong>
                 </div>
                 <div class="expand-content">
-                    ${ingredientesHTML}
-                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Nota especial?">
-                    <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')">AÑADIR</button>
+                    ${ingHTML}
+                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Nota especial? (Ej: sin cebolla)">
+                    <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')">AÑADIR AL PEDIDO</button>
                 </div>
             </div>`;
         if (sections[d.categoria]) sections[d.categoria].innerHTML += html;
     });
 });
 
-// Tabs Logic
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
