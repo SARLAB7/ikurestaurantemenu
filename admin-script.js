@@ -5,8 +5,9 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from
 const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com"];
 
-const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
-const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_EDIT = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_TRASH = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+const ICON_USER = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
 let primeraCarga = true;
 let catalogoPlatos = {}; 
@@ -33,7 +34,10 @@ const escucharPedidos = () => {
             listaPedidos.push(p);
 
             const itemsHTML = p.items.map(i => `
-                <div style="margin-bottom:8px;">• <strong>${i.nombre}</strong> ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}</div>
+                <div style="margin-bottom:8px; display:flex; flex-direction:column; border-bottom:1px solid #f9fafb; padding-bottom:6px;">
+                    <strong style="font-weight:500;">1x ${i.nombre}</strong> 
+                    ${i.nota ? `<span class="item-nota">Nota cliente: ${i.nota}</span>` : ''}
+                </div>
             `).join('');
 
             const itemsJson = encodeURIComponent(JSON.stringify(p.items));
@@ -49,7 +53,7 @@ const escucharPedidos = () => {
                 if (p.estado === 'completado' && p.completadoAt) {
                     const fechaFin = p.completadoAt?.toDate ? p.completadoAt.toDate() : new Date();
                     const diffMinutos = Math.round((fechaFin - fechaLlegada) / 60000);
-                    tiempoPrepStr = `<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:6px; font-size:0.7rem; font-weight:bold; margin-left:10px;">⏱️ ${diffMinutos} min</span>`;
+                    tiempoPrepStr = `<span class="badge badge-time">${diffMinutos} min</span>`;
                 }
             }
 
@@ -58,33 +62,44 @@ const escucharPedidos = () => {
                 const cardClass = esPreparando ? 'pedido-card preparando' : 'pedido-card';
                 
                 let btnAccion = esPreparando 
-                    ? `<div style="display:flex; flex-wrap:wrap; gap:5px;">
-                        <button style="background:#818cf8; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.75rem;" onclick="finalizarPedido('${docSnap.id}', 'nequi')">🟣 Nequi</button>
-                        <button style="background:#fbbf24; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.75rem;" onclick="finalizarPedido('${docSnap.id}', 'bancolombia')">🟡 Bancolombia</button>
-                        <button style="background:var(--success); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:0.75rem;" onclick="finalizarPedido('${docSnap.id}', 'efectivo')">💵 Efectivo</button>
+                    ? `<div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        <button class="btn-action btn-payment" onclick="finalizarPedido('${docSnap.id}', 'nequi')">Nequi</button>
+                        <button class="btn-action btn-payment" onclick="finalizarPedido('${docSnap.id}', 'bancolombia')">Banco</button>
+                        <button class="btn-action btn-payment" onclick="finalizarPedido('${docSnap.id}', 'efectivo')">Efectivo</button>
                        </div>`
                     : `<div style="display:flex; gap:10px;">
-                        <button style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="cambiarEstado('${docSnap.id}', 'preparando', '${itemsJson}')">🍳 PREPARAR</button>
-                        <button style="background:#e2e8f0; color:#333; border:none; padding:10px 15px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="imprimirComanda('${pJson}')">🖨️</button>
+                        <button class="btn-action btn-primary" style="background:#0f1115;" onclick="cambiarEstado('${docSnap.id}', 'preparando', '${itemsJson}')">Cocinar</button>
+                        <button class="btn-action btn-outline" style="padding:10px;" onclick="imprimirComanda('${pJson}')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        </button>
                        </div>`;
 
                 lp.innerHTML += `
                 <div class="${cardClass}">
-                    <div class="pedido-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong>👤 ${p.cliente} <span style="font-size:0.75rem; color:#64748b; font-weight:normal; margin-left:8px;">🕒 ${horaLlegada}</span></strong>
-                        <span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <strong style="display:flex; align-items:center; color:var(--text-main); font-size:1rem;">${ICON_USER} ${p.cliente}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${horaLlegada}</span>
+                        </div>
+                        <span class="badge badge-outline" style="text-transform:uppercase; letter-spacing:0.5px;">${p.tipo}</span>
                     </div>
-                    <div style="margin:15px 0;">${itemsHTML}</div>
-                    <div class="pedido-card-footer" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; color:var(--primary); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
+                    <div style="margin:16px 0; color:var(--text-main); font-size:0.9rem;">${itemsHTML}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                        <span style="font-weight:600; color:var(--text-main); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
                         ${btnAccion}
                     </div>
                 </div>`;
             } else if (p.estado === 'completado' && p.timestamp?.toDate().toDateString() === hoy) {
                 la.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">
-                    <span><strong>${p.cliente}</strong> <small style="color:#94a3b8; margin-left:10px;">${p.tipo} (${p.metodoPago || 'Efectivo'})</small> ${tiempoPrepStr}</span>
-                    <span style="color:var(--success); font-weight:700;">$${Number(p.total).toLocaleString()}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid #f3f4f6; font-size:0.9rem;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <strong style="color:var(--text-main);">${p.cliente}</strong>
+                        <span style="color:var(--text-muted); font-size:0.75rem;">${p.tipo} • Pago: ${p.metodoPago || 'Efectivo'}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                        <span style="font-weight:600; color:var(--text-main);">$${Number(p.total).toLocaleString()}</span>
+                        ${tiempoPrepStr}
+                    </div>
                 </div>`;
             }
         });
@@ -110,7 +125,6 @@ window.imprimirComanda = (pedidoJson) => {
 };
 
 window.cambiarEstado = async (id, nuevoEstado, itemsStr) => {
-    // Al pasar a preparando, ya no descuenta stock, solo cambia el estado
     await updateDoc(doc(db, "pedidos", id), { estado: nuevoEstado });
 };
 
@@ -169,26 +183,35 @@ const procesarEstadisticas = (pedidos) => {
 
     const rDiv = document.getElementById('rankings-categoria');
     if(rDiv) {
-        const tops = { diario: '---', rapida: '---', varios: '---' };
+        const tops = { diario: '-', rapida: '-', varios: '-' };
         const max = { diario: 0, rapida: 0, varios: 0 };
         Object.keys(conteoPlatos).forEach(nom => {
             const item = conteoPlatos[nom];
             if (item.cant > max[item.cat]) { max[item.cat] = item.cant; tops[item.cat] = nom; }
         });
         rDiv.innerHTML = `
-            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>📅 Menú Día</strong><br>${tops.diario}</div>
-            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>🍔 Rápidas</strong><br>${tops.rapida}</div>
-            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>✨ Varios</strong><br>${tops.varios}</div>`;
+            <div style="padding:16px; background:#f9fafb; border:1px solid var(--border); border-radius:8px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Categoría: Menú Día</div>
+                <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${tops.diario}</div>
+            </div>
+            <div style="padding:16px; background:#f9fafb; border:1px solid var(--border); border-radius:8px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Categoría: Rápidas</div>
+                <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${tops.rapida}</div>
+            </div>
+            <div style="padding:16px; background:#f9fafb; border:1px solid var(--border); border-radius:8px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Categoría: Varios</div>
+                <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${tops.varios}</div>
+            </div>`;
     }
 
     const ingDiv = document.getElementById('rankings-ingredientes');
     if(ingDiv) {
         const sorted = Object.entries(conteoIngredientes).sort((a,b) => b[1] - a[1]).slice(0, 8);
         ingDiv.innerHTML = sorted.map(([n, c]) => `
-            <div style="background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; padding:8px 12px; border-radius:8px; font-size:0.8rem; font-weight:600;">
-                ${n} <span style="margin-left:5px; opacity:0.5;">x${c}</span>
+            <div class="badge badge-outline" style="padding:6px 12px; font-size:0.8rem;">
+                ${n} <span style="margin-left:6px; color:var(--sidebar); opacity:0.6;">x${c}</span>
             </div>
-        `).join('') || 'Esperando datos...';
+        `).join('') || '<span style="color:var(--text-muted); font-size:0.85rem;">Esperando datos...</span>';
     }
 };
 
@@ -200,9 +223,9 @@ const escucharCarta = () => {
 
         const inv = document.getElementById('inv-list');
         inv.innerHTML = `
-            <div class="admin-group" id="g-diario"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>📅 Menú del Día</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-diario"></div></div>
-            <div class="admin-group" id="g-rapida"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>🍔 Comidas Rápidas</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-rapida"></div></div>
-            <div class="admin-group" id="g-varios"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>✨ Varios</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-varios"></div></div>
+            <div class="admin-group" id="g-diario"><div class="admin-group-header" onclick="toggleSeccion(this)"><span>Menú del Día</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="admin-group-content" id="adm-diario"></div></div>
+            <div class="admin-group" id="g-rapida"><div class="admin-group-header" onclick="toggleSeccion(this)"><span>Comidas Rápidas</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="admin-group-content" id="adm-rapida"></div></div>
+            <div class="admin-group" id="g-varios"><div class="admin-group-header" onclick="toggleSeccion(this)"><span>Varios</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="admin-group-content" id="adm-varios"></div></div>
         `;
         
         catalogoPlatos = {}; 
@@ -210,20 +233,19 @@ const escucharCarta = () => {
             const d = docSnap.data();
             catalogoPlatos[d.nombre] = d; 
 
-            // Se eliminó la etiqueta txtStock
             const html = `
             <div class="admin-row">
-                <div style="display:flex; flex-direction:column;">
-                    <div><strong>${d.nombre}</strong></div>
-                    <span style="font-size:0.8rem; color:var(--success); font-weight:700;">$${Number(d.precio).toLocaleString()}</span>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="font-weight:500; font-size:0.95rem;">${d.nombre}</div>
+                    <span style="font-size:0.85rem; color:var(--text-muted);">$${Number(d.precio).toLocaleString()}</span>
                 </div>
                 <div class="actions">
-                    <label class="switch">
+                    <label class="switch" style="margin-right:10px;">
                         <input type="checkbox" ${d.disponible !== false ? 'checked' : ''} onchange="toggleStock('${docSnap.id}', this.checked)">
                         <span class="slider"></span>
                     </label>
                     <button onclick="prepararEdicion('${docSnap.id}')" class="btn-icon">${ICON_EDIT}</button>
-                    <button onclick="triggerDelete('${docSnap.id}')" class="btn-icon" style="color:var(--danger);">${ICON_TRASH}</button>
+                    <button onclick="triggerDelete('${docSnap.id}')" class="btn-icon delete">${ICON_TRASH}</button>
                 </div>
             </div>`;
             const target = document.getElementById(`adm-${d.categoria}`);
@@ -246,13 +268,13 @@ let currentAction = null; let targetId = null;
 
 window.triggerDelete = (id) => { 
     currentAction = 'deletePlato'; targetId = id; 
-    document.getElementById('modal-title').innerText = "¿Eliminar este plato de la carta?"; 
+    document.getElementById('modal-title').innerText = "¿Eliminar plato?"; 
     document.getElementById('delete-modal').style.display = 'flex'; 
 };
 
 window.triggerResetStats = () => { 
     currentAction = 'resetStats'; 
-    document.getElementById('modal-title').innerText = "⚠️ ¿Borrar TODOS los pedidos y estadísticas?"; 
+    document.getElementById('modal-title').innerText = "Esta acción es irreversible. ¿Continuar?"; 
     document.getElementById('delete-modal').style.display = 'flex'; 
 };
 
@@ -264,7 +286,6 @@ document.getElementById('confirm-delete-btn').onclick = async () => {
         else if (currentAction === 'resetStats' && auth.currentUser.email === CORREO_MASTER) {
             const q = await getDocs(collection(db, "pedidos")); 
             await Promise.all(q.docs.map(d => deleteDoc(d.ref))); 
-            alert("✅ Todas las estadísticas y pedidos han sido reiniciados.");
         }
     } catch (error) { console.error(error); }
     closeModal();
@@ -276,34 +297,33 @@ window.prepararEdicion = async (id) => {
     document.getElementById('name').value = d.nombre;
     document.getElementById('price').value = d.precio;
     document.getElementById('category').value = d.categoria;
-    // Ya no cargamos el campo 'stock'
     document.getElementById('desc').value = d.descripcion || '';
-    document.getElementById('ingredients').value = Array.isArray(d.ingredientes) ? d.ingredientes.join(',') : d.ingredientes || '';
-    document.getElementById('f-title').innerText = "✏️ Editando: " + d.nombre;
+    document.getElementById('ingredients').value = Array.isArray(d.ingredientes) ? d.ingredientes.join(', ') : d.ingredientes || '';
+    document.getElementById('f-title').innerText = "Editar: " + d.nombre;
     document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('btn-cancelar').style.display = 'block';
 };
 
 window.cancelarEdicion = () => {
     document.getElementById('edit-id').value = "";
-    document.getElementById('f-title').innerText = "➕ Gestionar Carta";
+    document.getElementById('f-title').innerText = "Configurar Plato";
     document.getElementById('m-form').reset();
+    document.getElementById('btn-cancelar').style.display = 'none';
 };
 
 document.getElementById('m-form').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
     
-    // Ya no tomamos el dato de 'stockIngresado'
     const datos = {
         nombre: document.getElementById('name').value,
         precio: Number(document.getElementById('price').value),
         categoria: document.getElementById('category').value,
         descripcion: document.getElementById('desc').value,
-        ingredientes: document.getElementById('ingredients').value.split(',').map(s => s.trim()),
+        ingredientes: document.getElementById('ingredients').value.split(',').map(s => s.trim()).filter(s => s !== ''),
         timestamp: serverTimestamp()
     };
     
-    // Al ser un plato nuevo, siempre entra disponible por defecto
     if(!id) datos.disponible = true;
     
     id ? await updateDoc(doc(db, "platos", id), datos) : await addDoc(collection(db, "platos"), datos);
