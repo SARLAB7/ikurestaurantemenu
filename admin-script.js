@@ -1,5 +1,5 @@
 import { db, auth } from './firebase-config.js';
-import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDoc, getDocs, serverTimestamp, writeBatch, addDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDoc, getDocs, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 const CORREO_MASTER = "cb01grupo@gmail.com";
@@ -36,14 +36,32 @@ const escucharPedidos = () => {
                 <div style="margin-bottom:8px;">• <strong>${i.nombre}</strong> ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}</div>
             `).join('');
 
-            if (p.estado === 'pendiente') {
+            const itemsJson = encodeURIComponent(JSON.stringify(p.items));
+            const pJson = encodeURIComponent(JSON.stringify(p));
+
+            // NUEVO: Estados Intermedios e Impresión
+            if (p.estado === 'pendiente' || p.estado === 'preparando') {
+                const esPreparando = p.estado === 'preparando';
+                const cardClass = esPreparando ? 'pedido-card preparando' : 'pedido-card';
+                
+                let btnAccion = esPreparando 
+                    ? `<button style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="cambiarEstado('${docSnap.id}', 'completado')">✔️ ENTREGAR</button>`
+                    : `<button style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; margin-right:10px;" onclick="cambiarEstado('${docSnap.id}', 'preparando', '${itemsJson}')">🍳 PREPARAR</button>
+                       <button style="background:#e2e8f0; color:#333; border:none; padding:10px 15px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="imprimirComanda('${pJson}')">🖨️</button>`;
+
                 lp.innerHTML += `
-                <div class="pedido-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;"><strong>👤 ${p.cliente}</strong><span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span></div>
+                <div class="${cardClass}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>👤 ${p.cliente}</strong>
+                        <div>
+                            <span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b; margin-right:5px;">${p.tipo.toUpperCase()}</span>
+                            ${p.metodoPago ? `<span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#fef3c7; color:#d97706;">${p.metodoPago.toUpperCase()}</span>` : ''}
+                        </div>
+                    </div>
                     <div style="margin:15px 0;">${itemsHTML}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; color:var(--success); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
-                        <button style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="completar('${docSnap.id}')">LISTO</button>
+                        <span style="font-weight:700; color:var(--primary); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
+                        <div>${btnAccion}</div>
                     </div>
                 </div>`;
             } else if (p.estado === 'completado' && p.timestamp?.toDate().toDateString() === hoy) {
@@ -58,12 +76,58 @@ const escucharPedidos = () => {
     });
 };
 
+// NUEVO: Función para Impresión Térmica
+window.imprimirComanda = (pedidoJson) => {
+    const p = JSON.parse(decodeURIComponent(pedidoJson));
+    const v = window.open('', '_blank', 'width=300,height=600');
+    v.document.write(`
+        <style>body{font-family:monospace; margin:0; padding:10px; font-size:12px;} h3, h4{margin:5px 0;} .item{display:flex;justify-content:space-between; margin-bottom:5px;} .nota{font-size:10px; font-style:italic; font-weight:bold;}</style>
+        <div style="text-align:center;"><h3>IKU RESTAURANTE</h3><p>${new Date().toLocaleString()}</p></div>
+        <hr>
+        <h4>Cliente: ${p.cliente}</h4>
+        <h4>Servicio: ${p.tipo.toUpperCase()}</h4>
+        <p>Pago: ${p.metodoPago ? p.metodoPago.toUpperCase() : 'EFECTIVO'}</p>
+        <hr>
+        ${p.items.map(i => `<div class="item"><span>1x ${i.nombre}</span></div>${i.nota?`<div class="nota">⚠️ Nota: ${i.nota}</div>`:''}`).join('')}
+        <hr>
+        <h3 style="text-align:right;">Total: $${Number(p.total).toLocaleString()}</h3>
+        <script>setTimeout(()=>{window.print(); window.close();}, 500);</script>
+    `);
+};
+
+// NUEVO: Flujo de cocina y descuento de Stock automático
+window.cambiarEstado = async (id, nuevoEstado, itemsStr) => {
+    await updateDoc(doc(db, "pedidos", id), { estado: nuevoEstado });
+    
+    // Si la cocina empieza a preparar, descontamos el inventario de esos platos
+    if (nuevoEstado === 'preparando' && itemsStr) {
+        const items = JSON.parse(decodeURIComponent(itemsStr));
+        for (const i of items) {
+            if (i.id) {
+                const pRef = doc(db, "platos", i.id);
+                const pSnap = await getDoc(pRef);
+                if (pSnap.exists()) {
+                    let stockActual = pSnap.data().stock;
+                    if (stockActual !== undefined && stockActual > 0) {
+                        stockActual--;
+                        await updateDoc(pRef, { 
+                            stock: stockActual, 
+                            disponible: stockActual > 0 // Apaga el switch si llega a 0
+                        });
+                    }
+                }
+            }
+        }
+    }
+};
+
 const procesarEstadisticas = (pedidos) => {
     const ahora = new Date();
     const hoyStr = ahora.toDateString();
     const mesKey = `${ahora.getMonth() + 1}-${ahora.getFullYear()}`;
     
     let totalHoy = 0, totalMes = 0;
+    let tNequi = 0, tBanco = 0, tEfec = 0; // Cierre de caja
     const conteoPlatos = {};
     const conteoIngredientes = {};
 
@@ -72,7 +136,15 @@ const procesarEstadisticas = (pedidos) => {
         const fecha = p.timestamp.toDate();
         const pMesKey = `${fecha.getMonth() + 1}-${fecha.getFullYear()}`;
         
-        if (fecha.toDateString() === hoyStr) totalHoy += Number(p.total);
+        if (fecha.toDateString() === hoyStr) {
+            const valor = Number(p.total);
+            totalHoy += valor;
+            // Reporte Z
+            if(p.metodoPago === 'nequi') tNequi += valor;
+            else if(p.metodoPago === 'bancolombia') tBanco += valor;
+            else tEfec += valor;
+        }
+        
         if (pMesKey === mesKey) {
             totalMes += Number(p.total);
             p.items.forEach(i => {
@@ -88,8 +160,12 @@ const procesarEstadisticas = (pedidos) => {
         }
     });
 
-    document.getElementById('s-hoy').innerText = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalHoy);
-    document.getElementById('s-mes').innerText = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalMes);
+    const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+    document.getElementById('s-hoy').innerText = fmt(totalHoy);
+    document.getElementById('s-mes').innerText = fmt(totalMes);
+    document.getElementById('s-nequi').innerText = fmt(tNequi);
+    document.getElementById('s-bancolombia').innerText = fmt(tBanco);
+    document.getElementById('s-efectivo').innerText = fmt(tEfec);
 
     const rDiv = document.getElementById('rankings-categoria');
     if(rDiv) {
@@ -134,9 +210,16 @@ const escucharCarta = () => {
             const d = docSnap.data();
             catalogoPlatos[d.nombre] = d; 
 
+            // Mostrar aviso de stock
+            let txtStock = `<span style="font-size:0.75rem; color:#94a3b8; font-weight:normal; margin-left:10px;">📦 ${d.stock || 0} disp.</span>`;
+            if (d.stock === 0) txtStock = `<span style="font-size:0.75rem; color:var(--danger); font-weight:bold; margin-left:10px;">🛑 AGOTADO</span>`;
+
             const html = `
             <div class="admin-row">
-                <div style="display:flex; flex-direction:column;"><strong>${d.nombre}</strong><span style="font-size:0.8rem; color:var(--success); font-weight:700;">$${Number(d.precio).toLocaleString()}</span></div>
+                <div style="display:flex; flex-direction:column;">
+                    <div><strong>${d.nombre}</strong> ${txtStock}</div>
+                    <span style="font-size:0.8rem; color:var(--success); font-weight:700;">$${Number(d.precio).toLocaleString()}</span>
+                </div>
                 <div class="actions">
                     <label class="switch">
                         <input type="checkbox" ${d.disponible !== false ? 'checked' : ''} onchange="toggleStock('${docSnap.id}', this.checked)">
@@ -154,74 +237,52 @@ const escucharCarta = () => {
             const el = document.getElementById(id);
             if(el) el.classList.add('open');
         });
-        
-        if(gruposAbiertos.length === 0 && document.getElementById('g-diario')) {
-            document.getElementById('g-diario').classList.add('open');
-        }
+        if(gruposAbiertos.length === 0 && document.getElementById('g-diario')) document.getElementById('g-diario').classList.add('open');
 
-        setTimeout(() => {
-            document.querySelector('.main-content').scrollTop = scrollActual;
-        }, 0);
+        setTimeout(() => { document.querySelector('.main-content').scrollTop = scrollActual; }, 0);
     });
 };
 
-window.completar = (id) => updateDoc(doc(db, "pedidos", id), { estado: 'completado' });
 window.toggleStock = (id, val) => updateDoc(doc(db, "platos", id), { disponible: val });
 
 let currentAction = null; let targetId = null;
 
 window.triggerDelete = (id) => { 
-    currentAction = 'deletePlato'; 
-    targetId = id; 
+    currentAction = 'deletePlato'; targetId = id; 
     document.getElementById('modal-title').innerText = "¿Eliminar este plato de la carta?"; 
     document.getElementById('delete-modal').style.display = 'flex'; 
 };
 
-// NUEVO: Función para disparar el reseteo global
 window.triggerResetStats = () => { 
     currentAction = 'resetStats'; 
     document.getElementById('modal-title').innerText = "⚠️ ¿Borrar TODOS los pedidos y estadísticas?"; 
     document.getElementById('delete-modal').style.display = 'flex'; 
 };
 
-window.closeModal = () => { 
-    document.getElementById('delete-modal').style.display = 'none'; 
-    currentAction = null; 
-    targetId = null; 
-};
+window.closeModal = () => { document.getElementById('delete-modal').style.display = 'none'; currentAction = null; targetId = null; };
 
 document.getElementById('confirm-delete-btn').onclick = async () => {
     try {
-        if (currentAction === 'deletePlato' && targetId) {
-            await deleteDoc(doc(db, "platos", targetId));
-        } 
+        if (currentAction === 'deletePlato' && targetId) await deleteDoc(doc(db, "platos", targetId));
         else if (currentAction === 'resetStats' && auth.currentUser.email === CORREO_MASTER) {
-            // Borra todos los pedidos, lo que automáticamente reinicia las estadísticas a 0
             const q = await getDocs(collection(db, "pedidos")); 
-            
-            // Usamos Promise.all en lugar de batch para evitar el límite de 500 documentos de Firebase
             await Promise.all(q.docs.map(d => deleteDoc(d.ref))); 
-            
             alert("✅ Todas las estadísticas y pedidos han sido reiniciados.");
         }
-    } catch (error) {
-        alert("Hubo un error al ejecutar la acción.");
-        console.error(error);
-    }
+    } catch (error) { console.error(error); }
     closeModal();
 };
 
 window.prepararEdicion = async (id) => {
-    const snap = await getDoc(doc(db, "platos", id));
-    const d = snap.data();
+    const d = (await getDoc(doc(db, "platos", id))).data();
     document.getElementById('edit-id').value = id;
     document.getElementById('name').value = d.nombre;
     document.getElementById('price').value = d.precio;
     document.getElementById('category').value = d.categoria;
+    document.getElementById('stock').value = d.stock || 0;
     document.getElementById('desc').value = d.descripcion || '';
     document.getElementById('ingredients').value = Array.isArray(d.ingredientes) ? d.ingredientes.join(',') : d.ingredientes || '';
     document.getElementById('f-title').innerText = "✏️ Editando: " + d.nombre;
-    
     document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -234,15 +295,20 @@ window.cancelarEdicion = () => {
 document.getElementById('m-form').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
+    const stockIngresado = Number(document.getElementById('stock').value);
     const datos = {
         nombre: document.getElementById('name').value,
         precio: Number(document.getElementById('price').value),
         categoria: document.getElementById('category').value,
+        stock: stockIngresado,
         descripcion: document.getElementById('desc').value,
         ingredientes: document.getElementById('ingredients').value.split(',').map(s => s.trim()),
         timestamp: serverTimestamp()
     };
-    id ? await updateDoc(doc(db, "platos", id), datos) : await addDoc(collection(db, "platos"), { ...datos, disponible: true });
+    // Si es nuevo y le ponen stock > 0, nace disponible
+    if(!id) datos.disponible = stockIngresado > 0;
+    
+    id ? await updateDoc(doc(db, "platos", id), datos) : await addDoc(collection(db, "platos"), datos);
     cancelarEdicion();
 };
 
@@ -251,11 +317,8 @@ onAuthStateChanged(auth, (u) => {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
         
-        // Control de seguridad visual: Solo cb01grupo@gmail.com ve el botón rojo
         const btnReset = document.getElementById('btn-reset-stats');
-        if(btnReset) {
-            btnReset.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
-        }
+        if(btnReset) btnReset.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
 
         escucharPedidos(); escucharCarta();
     } else {
