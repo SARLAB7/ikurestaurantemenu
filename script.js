@@ -3,7 +3,6 @@ import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 
 
 let carrito = [];
 
-// Notificaciones Toast
 const toastDiv = document.createElement('div');
 toastDiv.id = 'toast';
 document.body.appendChild(toastDiv);
@@ -14,7 +13,6 @@ const mostrarNotificacion = (mensaje) => {
     setTimeout(() => { toastDiv.classList.remove("show"); }, 3000);
 };
 
-// Acordeón de platos
 window.toggleDish = (header) => {
     const dish = header.parentElement;
     const isOpened = dish.classList.contains('expanded');
@@ -22,7 +20,6 @@ window.toggleDish = (header) => {
     if (!isOpened) dish.classList.add('expanded');
 };
 
-// Carrito
 window.toggleCart = () => {
     const modal = document.getElementById('cart-modal');
     if(modal) modal.classList.toggle('open');
@@ -51,13 +48,13 @@ function actualizarCarrito() {
     carrito.forEach((item, i) => {
         total += item.precio;
         cont.innerHTML += `
-            <div class="cart-item-row">
+            <div style="border-bottom:1px solid #eee; padding:15px 0;">
                 <div style="display:flex; justify-content:space-between;">
                     <strong>${item.nombre}</strong> 
                     <span>$${item.precio.toLocaleString()}</span>
                 </div>
-                ${item.nota ? `<p class="cart-item-note">Nota: ${item.nota}</p>` : ''}
-                <button onclick="quitar(${i})" class="btn-remove">Quitar</button>
+                ${item.nota ? `<p style="font-size:0.8rem; color:#666; font-style:italic;">Nota: ${item.nota}</p>` : ''}
+                <button onclick="quitar(${i})" style="color:#ff4444; background:none; border:none; cursor:pointer; font-size:0.8rem; margin-top:5px;">Quitar</button>
             </div>`;
     });
     
@@ -72,7 +69,7 @@ window.enviarPedido = async () => {
     const quiereWhatsApp = document.getElementById('check-whatsapp')?.checked;
 
     if (!mesaDireccion || carrito.length === 0) { 
-        alert("Ingresa tu nombre/mesa y añade productos."); 
+        alert("Por favor ingresa tu nombre/mesa y añade productos."); 
         return; 
     }
 
@@ -93,28 +90,28 @@ window.enviarPedido = async () => {
             window.open(`https://wa.me/573210000000?text=${textoWA}`);
         }
 
-        mostrarNotificacion("¡Pedido enviado! 🧑‍🍳"); 
+        mostrarNotificacion("¡Pedido enviado con éxito! 🧑‍🍳"); 
         carrito = []; 
         actualizarCarrito(); 
         window.toggleCart();
     } catch (e) { 
-        mostrarNotificacion("Error de conexión."); 
+        mostrarNotificacion("Error al conectar con la cocina."); 
     }
 };
 
-// ESCUCHA DE PLATOS POR CATEGORÍA
+// RENDERIZADO POR SECCIONES SEPARADAS
 onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) => {
-    const loader = document.getElementById('loader');
-    if(loader) loader.style.display = 'none';
-
-    // Limpiamos los contenedores antes de renderizar
-    const divs = {
+    const secciones = {
         diario: document.getElementById('diario'),
         rapida: document.getElementById('rapida'),
         varios: document.getElementById('varios')
     };
 
-    Object.values(divs).forEach(d => { if(d) d.innerHTML = ''; });
+    // Limpiar todos los contenedores antes de rellenar
+    Object.values(secciones).forEach(sec => { if(sec) sec.innerHTML = ''; });
+
+    const loader = document.getElementById('loader');
+    if(loader) loader.style.display = 'none';
 
     sn.docs.forEach(docSnap => {
         const d = docSnap.data();
@@ -123,43 +120,37 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
         const html = `
             <div class="dish-item">
                 <div class="dish-header" onclick="toggleDish(this)">
-                    <div>
-                        <h3>${d.nombre}</h3>
-                        <p class="dish-desc-short">${d.descripcion || ''}</p>
-                    </div>
-                    <strong class="dish-price">$${Number(d.precio).toLocaleString()}</strong>
+                    <h3>${d.nombre}</h3> 
+                    <strong>$${d.precio.toLocaleString()}</strong>
                 </div>
                 <div class="expand-content">
-                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Nota especial?">
+                    <p style="font-size:0.9rem; color:#555; margin-bottom:10px;">${d.descripcion || ''}</p>
+                    <input type="text" id="note-${docSnap.id}" class="note-input" placeholder="¿Alguna nota especial?">
                     <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${docSnap.id}')">AÑADIR AL PEDIDO</button>
                 </div>
             </div>`;
         
-        if (divs[d.categoria]) {
-            divs[d.categoria].innerHTML += html;
+        if (secciones[d.categoria]) {
+            secciones[d.categoria].innerHTML += html;
         }
     });
 
-    // Mensaje si una categoría está vacía
-    Object.keys(divs).forEach(key => {
-        if (divs[key] && divs[key].innerHTML === '') {
-            divs[key].innerHTML = '<p class="empty-msg">No hay platos disponibles en esta sección.</p>';
+    // Mensaje si no hay platos en una categoría
+    Object.keys(secciones).forEach(key => {
+        if (secciones[key] && secciones[key].innerHTML === '') {
+            secciones[key].innerHTML = '<p style="text-align:center; padding:20px; color:#888;">No hay platos en esta sección por ahora.</p>';
         }
     });
 });
 
-// LOGICA DE PESTAÑAS
+// LOGICA DE PESTAÑAS (TABS)
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
-        // Quitar active de todos los botones
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        // Quitar active de todas las secciones
         document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
         
-        // Agregar active al actual
         btn.classList.add('active');
-        const targetId = btn.getAttribute('data-tab');
-        const targetSection = document.getElementById(targetId);
-        if(targetSection) targetSection.classList.add('active');
+        const target = document.getElementById(btn.dataset.tab);
+        if(target) target.classList.add('active');
     };
 });
