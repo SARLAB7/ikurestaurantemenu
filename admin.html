@@ -6,181 +6,119 @@
     <title>IKU Admin | Centro de Mando</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --sidebar-bg: #11141a;
-            --sidebar-hover: #1e232d;
-            --main-bg: #f4f7f6;
-            --white: #ffffff;
-            --accent: #ffcc00;
-            --text-dark: #333333;
-            --text-light: #8892a0;
-            --border: #e2e8f0;
-            --success: #28a745;
-            --danger: #dc3545;
-            --info: #4285F4;
-        }
-
+        :root { --sidebar-bg: #11141a; --sidebar-hover: #1e232d; --main-bg: #f4f7f6; --white: #ffffff; --accent: #ffcc00; --text-dark: #333333; --text-light: #8892a0; --border: #e2e8f0; --success: #28a745; --danger: #dc3545; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-
-        body { background: var(--main-bg); color: var(--text-dark); height: 100vh; overflow: hidden; margin: 0; }
-
-        /* --- LOGIN --- */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--sidebar-bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .login-card { background: var(--white); padding: 40px; border-radius: 12px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn-google { background: var(--info); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 20px; width: 100%; }
-
-        /* --- LAYOUT --- */
-        #admin-panel { display: none; width: 100%; height: 100vh; } 
-
-        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; height: 100vh; }
-        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .sidebar-header h2 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--accent); letter-spacing: 2px; }
+        body { background: var(--main-bg); height: 100vh; overflow: hidden; }
         
+        #login-screen { position: fixed; inset: 0; background: var(--sidebar-bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; text-align: center; width: 350px; }
+        
+        #admin-panel { display: none; width: 100%; height: 100vh; }
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; height: 100vh; }
+        .sidebar-header { padding: 30px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--accent); }
         .nav-menu { padding: 20px 0; flex: 1; }
-        .nav-item { padding: 15px 25px; color: var(--text-light); cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 500; border-left: 4px solid transparent; }
+        .nav-item { padding: 15px 25px; color: var(--text-light); cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 4px solid transparent; transition: 0.3s; }
         .nav-item.active { background: var(--sidebar-hover); color: white; border-left-color: var(--accent); }
-        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: auto; }
-        .btn-logout { background: none; border: none; color: var(--text-light); cursor: pointer; width: 100%; text-align: left; }
-
-        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .topbar { background: var(--white); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; border-bottom: 1px solid var(--border); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; }
+        .topbar { background: white; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; border-bottom: 1px solid var(--border); }
         .content-area { padding: 30px; overflow-y: auto; flex: 1; }
         
-        .view-section { display: none; animation: fadeIn 0.4s ease; }
+        .view-section { display: none; }
         .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- PEDIDOS --- */
-        .card { background: var(--white); border-radius: 12px; padding: 25px; border: 1px solid var(--border); margin-bottom: 25px; }
-        .card-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-
-        /* Estilo para los que están EN COCHINA (Pendientes) */
+        
+        .card { background: white; border-radius: 12px; padding: 25px; border: 1px solid var(--border); margin-bottom: 25px; }
         .pedidos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .pedido-card { background: var(--white); border-radius: 10px; border: 1px solid var(--border); border-left: 6px solid var(--accent); padding: 20px; }
-        .pedido-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .pedido-items { list-style: none; margin-bottom: 20px; font-size: 0.9rem; }
-        .pedido-items li { margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
-
-        /* Estilo para los ATENDIDOS (Lista pequeña) */
-        .atendido-row { display: grid; grid-template-columns: 1fr 1fr 100px; align-items: center; padding: 10px 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 6px; border: 1px solid #edf2f7; font-size: 0.85rem; }
-        .atendido-mesa { font-weight: 600; color: var(--sidebar-bg); }
-        .atendido-valor { color: var(--success); font-weight: 700; text-align: center; }
-        .btn-borrar-atendido { background: none; border: none; color: var(--danger); cursor: pointer; text-align: right; font-weight: 600; font-size: 0.75rem; }
-
-        /* --- FORMULARIOS --- */
+        .pedido-card { background: white; border-radius: 10px; border-left: 6px solid var(--accent); padding: 20px; border: 1px solid var(--border); border-left-width: 6px; }
+        
+        .atendido-row { display: grid; grid-template-columns: 1fr 1fr 100px; padding: 10px 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 5px; font-size: 0.85rem; border: 1px solid #edf2f7; }
+        
+        /* Formulario */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top: 5px; }
-        .btn-primary { background: var(--sidebar-bg); color: var(--accent); border: none; padding: 12px 25px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fafafa; }
+        .btn-primary { background: var(--sidebar-bg); color: var(--accent); border: none; padding: 15px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
 
-        /* --- STATS --- */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .stat-card { padding: 30px; border-radius: 12px; color: white; }
+        /* Switch stock */
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--success); }
+        input:checked + .slider:before { transform: translateX(18px); }
     </style>
 </head>
 <body>
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
     <div id="login-screen">
-        <div class="login-card">
-            <h1>IKU</h1>
-            <p>Admin Panel</p>
-            <button id="login-btn" class="btn-google">Entrar con Google</button>
-        </div>
+        <div class="login-card"><h1>IKU</h1><button id="login-btn" class="btn-primary" style="margin-top:20px;">Entrar con Google</button></div>
     </div>
 
     <div id="admin-panel">
         <aside class="sidebar">
-            <div class="sidebar-header"><h2>IKU</h2><p>Pueblo Bello</p></div>
+            <div class="sidebar-header"><h2>IKU ADMIN</h2></div>
             <ul class="nav-menu">
-                <li class="nav-item active" onclick="cambiarVista('vista-pedidos', this)"><span>🔔</span> Pedidos en Vivo</li>
-                <li class="nav-item" onclick="cambiarVista('vista-menu', this)"><span>🍔</span> Gestión de Menú</li>
-                <li class="nav-item" onclick="cambiarVista('vista-estadisticas', this)"><span>📊</span> Estadísticas</li>
+                <li class="nav-item active" onclick="cambiarVista('v-pedidos', this)"><span>🔔</span> Pedidos</li>
+                <li class="nav-item" onclick="cambiarVista('v-menu', this)"><span>🍔</span> Menú</li>
+                <li class="nav-item" onclick="cambiarVista('v-stats', this)"><span>📊</span> Estadísticas</li>
             </ul>
-            <div class="sidebar-footer"><button class="btn-logout" id="logout-btn">🚪 Cerrar Sesión</button></div>
+            <div style="padding:20px;"><button onclick="auth.signOut()" style="background:none; border:none; color:red; cursor:pointer;">Cerrar Sesión</button></div>
         </aside>
 
         <main class="main-content">
-            <header class="topbar"><h3 id="topbar-title">Pedidos en Vivo</h3><div class="user-info">🟢 Conectado</div></header>
-
+            <header class="topbar"><h3 id="t-title">Pedidos</h3><div>🟢 En Línea</div></header>
             <div class="content-area">
-                
-                <section id="vista-pedidos" class="view-section active">
-                    <div class="card">
-                        <div class="card-header"><h4>🔥 Pedidos en Cocina (Pendientes)</h4></div>
-                        <div id="lista-pedidos-pendientes" class="pedidos-grid">
-                            <p style="color:#888;">No hay nada por preparar...</p>
-                        </div>
-                    </div>
-
-                    <div class="card" style="background: #f1f3f5; border: 1px dashed #ced4da;">
-                        <div class="card-header" style="margin-bottom: 10px;">
-                            <h4 style="font-size: 0.9rem; color: #495057;">✅ Historial de Despacho (Hoy)</h4>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 100px; padding: 0 20px 10px; font-size: 0.7rem; font-weight: bold; color: #adb5bd; text-transform: uppercase;">
-                            <span>Mesa / Cliente</span>
-                            <span style="text-align: center;">Total Atendido</span>
-                            <span style="text-align: right;">Acción</span>
-                        </div>
-                        <div id="lista-pedidos-atendidos">
-                            </div>
-                    </div>
+                <section id="v-pedidos" class="view-section active">
+                    <div class="card"><h4>🔥 Cocina (Pendientes)</h4><div id="l-pendientes" class="pedidos-grid" style="margin-top:15px;"></div></div>
+                    <div class="card"><h4>✅ Despachados (Hoy)</h4><div id="l-atendidos" style="margin-top:15px;"></div></div>
                 </section>
 
-                <section id="vista-menu" class="view-section">
+                <section id="v-menu" class="view-section">
                     <div class="card">
-                        <div class="card-header">
-                            <h4 id="form-title">Añadir Nuevo Plato</h4>
-                            <button type="button" id="close-edit-btn" style="display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer;" onclick="cancelarEdicion()">×</button>
+                        <div style="display:flex; justify-content:space-between;">
+                            <h4 id="f-title">Añadir Plato</h4>
+                            <button id="close-x" style="display:none; border:none; background:none; font-size:1.5rem;" onclick="cancelarEdicion()">×</button>
                         </div>
-                        <form id="menu-form">
+                        <form id="m-form" style="margin-top:15px;">
                             <input type="hidden" id="edit-id">
                             <div class="form-grid">
                                 <div><label>Nombre</label><input type="text" id="name" required></div>
                                 <div><label>Precio</label><input type="number" id="price" required></div>
-                                <div><label>Categoría</label>
-                                    <select id="category">
-                                        <option value="diario">Menú del Día</option>
-                                        <option value="rapida">Comidas Rápidas</option>
-                                        <option value="varios">Varios</option>
-                                    </select>
-                                </div>
+                                <div><label>Categoría</label><select id="category"><option value="diario">Menú del Día</option><option value="rapida">Comidas Rápidas</option><option value="varios">Varios</option></select></div>
                                 <div><label>Ingredientes</label><input type="text" id="ingredients"></div>
                             </div>
-                            <div style="margin-top: 15px;"><label>Descripción</label><textarea id="desc" rows="2"></textarea></div>
-                            <button type="submit" id="submit-btn" class="btn-primary" style="margin-top: 20px;">PUBLICAR PLATO</button>
+                            <textarea id="desc" rows="2" placeholder="Descripción..." style="margin-top:15px;"></textarea>
+                            <button type="submit" id="s-btn" class="btn-primary" style="margin-top:15px;">PUBLICAR</button>
                         </form>
                     </div>
-                    <div id="inventario-container">
-                        <div class="card">
-                            <h5 style="color: var(--accent); margin-bottom: 15px;">MENÚ DEL DÍA</h5>
-                            <div id="lista-diario"></div>
-                            <h5 style="color: var(--accent); margin: 20px 0 15px;">COMIDAS RÁPIDAS</h5>
-                            <div id="lista-rapida"></div>
-                            <h5 style="color: var(--accent); margin: 20px 0 15px;">VARIOS</h5>
-                            <div id="lista-varios"></div>
+                    <div class="card" id="inv-list"></div>
+                </section>
+
+                <section id="v-stats" class="view-section">
+                    <div class="form-grid">
+                        <div class="card" style="background:var(--sidebar-bg); color:var(--accent);"><h5>Hoy</h5><h2 id="s-hoy">$0</h2></div>
+                        <div class="card" style="background:var(--info); color:white;"><h5>Mes</h5><h2 id="s-mes">$0</h2></div>
+                    </div>
+                    <div class="card">
+                        <h4>Rankings del Mes</h4>
+                        <div class="form-grid" style="margin-top:15px;">
+                            <div><h5 style="color:var(--success);">🔥 Top 5</h5><ol id="top-5" style="padding-left:20px;"></ol></div>
+                            <div><h5 style="color:var(--danger);">❄️ Menos Vendidos</h5><ul id="bot-5" style="padding-left:20px;"></ul></div>
                         </div>
                     </div>
                 </section>
-
-                <section id="vista-estadisticas" class="view-section">
-                    <div class="stat-grid">
-                        <div class="stat-card" style="background: var(--sidebar-bg);"><h4 style="color: var(--accent);">Ventas Hoy</h4><h2 id="ventas-hoy">$0</h2></div>
-                        <div class="stat-card" style="background: var(--info);"><h4>Ventas Mes</h4><h2 id="ventas-mes">$0</h2></div>
-                    </div>
-                </section>
-
             </div>
         </main>
     </div>
-
+    <script type="module" src="admin-script.js"></script>
     <script>
-        function cambiarVista(idVista, elementoNav) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            elementoNav.classList.add('active');
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(idVista).classList.add('active');
-            document.getElementById('topbar-title').innerText = elementoNav.innerText.trim();
+        function cambiarVista(id, el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('t-title').innerText = el.innerText.trim();
         }
     </script>
-    <script type="module" src="admin-script.js"></script>
 </body>
 </html>
