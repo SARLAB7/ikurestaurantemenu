@@ -6,6 +6,18 @@ import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 
 
 let carrito = [];
 
+// --- 1. NOTIFICACIÓN FLOTANTE (TOAST) ---
+const toastDiv = document.createElement('div');
+toastDiv.id = 'toast';
+document.body.appendChild(toastDiv);
+
+const mostrarNotificacion = (mensaje) => {
+    toastDiv.innerText = mensaje;
+    toastDiv.classList.add("show");
+    setTimeout(() => { toastDiv.classList.remove("show"); }, 3000);
+};
+
+// --- 2. CARRITO Y PEDIDOS ---
 window.toggleCart = () => document.getElementById('cart-modal').classList.toggle('open');
 
 window.agregarAlCarrito = (nombre, precio, id) => {
@@ -13,7 +25,9 @@ window.agregarAlCarrito = (nombre, precio, id) => {
     carrito.push({ nombre, precio: parseInt(precio), nota });
     document.getElementById(`note-${id}`).value = '';
     actualizarCarrito();
-    alert(`¡${nombre} añadido a tu pedido!`);
+    
+    // Notificación sutil
+    mostrarNotificacion(`Añadido: ${nombre} 🛒`); 
 };
 
 function actualizarCarrito() {
@@ -21,6 +35,7 @@ function actualizarCarrito() {
     document.getElementById('cart-count').innerText = carrito.length;
     cont.innerHTML = '';
     let total = 0;
+    
     carrito.forEach((item, i) => {
         total += item.precio;
         cont.innerHTML += `
@@ -44,6 +59,7 @@ window.quitar = (i) => { carrito.splice(i, 1); actualizarCarrito(); };
 window.enviarPedido = async () => {
     const mesa = prompt("Ingresa tu Nombre o Número de Mesa para enviar el pedido:");
     if (!mesa || carrito.length === 0) return;
+    
     try {
         await addDoc(collection(db, "pedidos"), {
             cliente: mesa,
@@ -52,16 +68,21 @@ window.enviarPedido = async () => {
             estado: "pendiente",
             timestamp: serverTimestamp()
         });
-        alert("¡Pedido recibido en cocina! En breve estará listo.");
+        
+        mostrarNotificacion("¡Tu pedido estará listo muy pronto! 🧑‍🍳"); 
+        
         carrito = [];
         actualizarCarrito();
         toggleCart();
-    } catch (e) { alert("Error al enviar el pedido. Intenta de nuevo."); }
+    } catch (e) { 
+        mostrarNotificacion("Error al enviar. Intenta de nuevo."); 
+    }
 };
 
-// --- RENDERIZADO DEL MENÚ DESDE FIREBASE ---
+// --- 3. RENDERIZADO DEL MENÚ DESDE FIREBASE ---
 const renderMenu = () => {
     const q = query(collection(db, "platos"), orderBy("timestamp", "desc"));
+    
     onSnapshot(q, (sn) => {
         const cats = { diario: '', rapida: '', varios: '' };
         document.getElementById('loader').style.display = 'none';
@@ -72,7 +93,6 @@ const renderMenu = () => {
                 style: 'currency', currency: 'COP', minimumFractionDigits: 0
             }).format(d.precio);
 
-            // CORRECCIÓN: El onclick ahora está SOLO en el 'dish-header'
             const html = `
                 <div class="dish-item">
                     <div class="dish-header" onclick="this.parentElement.classList.toggle('expanded')">
@@ -82,13 +102,15 @@ const renderMenu = () => {
                     <div class="expand-content">
                         <p class="description">${d.descripcion || ''}</p>
                         
-                        <div class="ingredients-box" style="margin-bottom: 15px;">
-                            <span class="ing-label" style="font-size: 0.7rem; font-weight: bold; color: #b8860b;">INGREDIENTES:</span>
-                            <p class="ing-list" style="font-size: 0.85rem; color: #555;">${d.ingredientes ? d.ingredientes.join(' • ') : 'Consultar con el personal'}</p>
+                        <div class="ingredients-box">
+                            <span class="ing-label">INGREDIENTES:</span>
+                            <p class="ing-list">${d.ingredientes ? d.ingredientes.join(' • ') : 'Consultar con el personal'}</p>
                         </div>
 
-                        <input type="text" id="note-${doc.id}" class="note-input" placeholder="Personaliza tu plato (ej: sin salsas)">
-                        <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${doc.id}')">PEDIR ESTE PLATO</button>
+                        <div class="order-controls">
+                            <input type="text" id="note-${doc.id}" class="note-input" placeholder="Personaliza tu plato (ej: sin salsas)">
+                            <button class="btn-add-cart" onclick="agregarAlCarrito('${d.nombre}', '${d.precio}', '${doc.id}')">PEDIR ESTE PLATO</button>
+                        </div>
                     </div>
                 </div>`;
             
@@ -103,7 +125,7 @@ const renderMenu = () => {
 
 renderMenu();
 
-// --- LÓGICA DE PESTAÑAS (TABS) ---
+// --- 4. LÓGICA DE PESTAÑAS (TABS) ---
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
