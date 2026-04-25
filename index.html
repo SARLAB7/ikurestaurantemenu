@@ -11,15 +11,16 @@
 
     <div class="container">
         <aside class="hero">
-            <div>
+            <div class="hero-inner">
                 <span class="overline">Bienvenidos a</span>
                 <h1>IKU</h1>
                 <p class="brand-sub">RESTAURANTE BAR</p>
-            </div>
-            <div class="info-box">
-                <p class="location">📍 Pueblo Bello, Cesar</p>
-                <p class="schedule">Lun - Dom: 11:00 AM - 10:00 PM</p>
-                <p class="tagline">Sabor de la Sierra</p>
+                
+                <div class="info-box">
+                    <p class="location">📍 Pueblo Bello, Cesar</p>
+                    <p class="schedule">Lun - Dom: 11:00 AM - 10:00 PM</p>
+                    <p class="tagline">Sabor de la Sierra</p>
+                </div>
             </div>
         </aside>
 
@@ -58,18 +59,18 @@
                 <span id="cart-total-price">$0</span>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 0.8rem; font-weight: bold; color: #666; display: block; margin-bottom: 8px;">TIPO DE SERVICIO:</label>
-                <select id="tipo-servicio" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;" onchange="ajustarPlaceholder()">
+            <div class="order-form">
+                <label>TIPO DE SERVICIO:</label>
+                <select id="tipo-servicio" onchange="ajustarPlaceholder()">
                     <option value="mesa">🍽️ Mesa (Comer aquí)</option>
                     <option value="domicilio">🛵 Domicilio</option>
                 </select>
 
-                <input type="text" id="nombre-cliente" placeholder="Nombre y # de Mesa" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
+                <input type="text" id="nombre-cliente" placeholder="Nombre y # de Mesa">
 
-                <div style="display: flex; align-items: center; gap: 10px; background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bcf0da;">
-                    <input type="checkbox" id="check-whatsapp" checked style="width: 20px; height: 20px; cursor: pointer;">
-                    <label for="check-whatsapp" style="font-size: 0.85rem; cursor: pointer;">Enviar respaldo por <strong>WhatsApp</strong></label>
+                <div class="whatsapp-check">
+                    <input type="checkbox" id="check-whatsapp" checked>
+                    <label for="check-whatsapp">Enviar respaldo por <strong>WhatsApp</strong></label>
                 </div>
             </div>
 
