@@ -68,6 +68,7 @@ function escucharPedidos() {
                 }
             });
 
+            // Tarjeta de Pedido Actualizada con Botones en lugar de Selects
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
             card.innerHTML = `
@@ -81,18 +82,36 @@ function escucharPedidos() {
                 <div style="margin-bottom:15px; padding-left: 10px; border-left: 2px solid var(--border);">
                     ${p.items.map(i => `<div style="font-size:0.9rem; margin-bottom:4px;">• 1x ${i.nombre} ${i.nota ? `<span style="color:#eab308; font-size:0.8rem;">(${i.nota})</span>` : ''}</div>`).join('')}
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <select onchange="actualizarEstado('${p.id}', this.value)" style="flex:1; margin:0; padding:8px; border-radius:6px;">
-                        <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                        <option value="preparando" ${p.estado === 'preparando' ? 'selected' : ''}>🍳 Preparando</option>
-                        <option value="listo" ${p.estado === 'listo' ? 'selected' : ''}>✅ Entregado</option>
-                    </select>
-                    <select onchange="actualizarPago('${p.id}', this.value)" style="flex:1; margin:0; padding:8px; border-radius:6px;">
-                        <option value="" disabled ${!p.metodoPago ? 'selected' : ''}>Pago...</option>
-                        <option value="nequi" ${p.metodoPago === 'nequi' ? 'selected' : ''}>Nequi</option>
-                        <option value="banco" ${p.metodoPago === 'banco' ? 'selected' : ''}>Banco</option>
-                        <option value="efectivo" ${p.metodoPago === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                    </select>
+                
+                <div class="acciones-pedido" style="margin-top:10px;">
+                    ${p.estado === 'pendiente' ? 
+                        `<button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar">
+                            🍳 Iniciar Preparación
+                        </button>` 
+                        : ''
+                    }
+                    
+                    ${p.estado === 'preparando' ? 
+                        `<div style="width: 100%;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; text-align: center;">Completar y cobrar con:</div>
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi">Nequi</button>
+                                <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco">Banco</button>
+                                <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
+                            </div>
+                        </div>` 
+                        : ''
+                    }
+
+                    ${p.estado === 'listo' ? 
+                        `<div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size: 0.85rem; color: var(--success); font-weight: 600;">
+                                ✅ Pagado con ${p.metodoPago ? p.metodoPago.toUpperCase() : 'N/A'}
+                            </div>
+                            <button onclick="revertirPedido('${p.id}')" style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer; text-decoration:underline;">Revertir</button>
+                        </div>` 
+                        : ''
+                    }
                 </div>
             `;
 
@@ -121,8 +140,10 @@ function escucharPedidos() {
     });
 }
 
+// NUEVAS FUNCIONES DE ESTADO ÁGIL
 window.actualizarEstado = async (id, estado) => await updateDoc(doc(db, "pedidos", id), { estado });
-window.actualizarPago = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { metodoPago });
+window.cerrarPedido = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { estado: 'listo', metodoPago: metodoPago });
+window.revertirPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: 'preparando', metodoPago: null });
 window.toggleDisponibilidad = async (id, disp) => await updateDoc(doc(db, "platos", id), { disponible: disp });
 
 // --- LÓGICA DE CARTA AGRUPADA ---
@@ -191,7 +212,7 @@ function escucharCarta() {
     });
 }
 
-// --- NUEVA LÓGICA PARA EL MODAL PERSONALIZADO ---
+// --- LÓGICA PARA EL MODAL PERSONALIZADO ---
 let idParaEliminar = null;
 
 window.eliminarPlatoModal = (id) => {
