@@ -4,15 +4,48 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from
 
 const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com"];
-let totalPAnterior = 0;
 
-// Restauración de Iconos SVG Originales
 const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
 const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
-const sonar = () => { const a = document.getElementById('notif-sound'); if(a) a.play().catch(e => {}); };
+const escucharData = () => {
+    onSnapshot(query(collection(db, "pedidos"), orderBy("timestamp", "desc")), (sn) => {
+        const lp = document.getElementById('l-pendientes');
+        const la = document.getElementById('l-atendidos');
+        const allPedidos = [];
+        const hoy = new Date().toDateString();
 
-// PROCESAR ESTADÍSTICAS SIMPLES
+        lp.innerHTML = ''; la.innerHTML = '';
+        sn.docs.forEach(docSnap => {
+            const p = docSnap.data();
+            allPedidos.push(p);
+
+            const itemsHTML = p.items.map(i => `
+                <div style="margin-bottom:8px;">• <strong>${i.nombre}</strong> ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}</div>
+            `).join('');
+
+            if (p.estado === 'pendiente') {
+                lp.innerHTML += `
+                <div class="pedido-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><strong>👤 ${p.cliente}</strong><span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span></div>
+                    <div style="margin:15px 0;">${itemsHTML}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; color:var(--success); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
+                        <button style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="completar('${docSnap.id}')">LISTO</button>
+                    </div>
+                </div>`;
+            } else if (p.estado === 'completado' && p.timestamp?.toDate().toDateString() === hoy) {
+                la.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">
+                    <span><strong>${p.cliente}</strong> <small style="color:#94a3b8; margin-left:10px;">${p.tipo}</small></span>
+                    <span style="color:var(--success); font-weight:700;">$${Number(p.total).toLocaleString()}</span>
+                </div>`;
+            }
+        });
+        procesarEstadisticas(allPedidos);
+    });
+};
+
 const procesarEstadisticas = async (pedidos) => {
     const ahora = new Date();
     const mesActual = `${ahora.getMonth() + 1}-${ahora.getFullYear()}`;
@@ -57,48 +90,6 @@ const procesarEstadisticas = async (pedidos) => {
     }
 };
 
-const escucharData = () => {
-    onSnapshot(query(collection(db, "pedidos"), orderBy("timestamp", "desc")), (sn) => {
-        const lp = document.getElementById('l-pendientes');
-        const la = document.getElementById('l-atendidos');
-        const allPedidos = [];
-        let pCount = 0;
-        const hoy = new Date().toDateString();
-
-        lp.innerHTML = ''; la.innerHTML = '';
-        sn.docs.forEach(docSnap => {
-            const p = docSnap.data();
-            allPedidos.push(p);
-
-            const itemsHTML = p.items.map(i => `
-                <div style="margin-bottom:8px;">• <strong>${i.nombre}</strong> ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}</div>
-            `).join('');
-
-            if (p.estado === 'pendiente') {
-                pCount++;
-                lp.innerHTML += `
-                <div class="pedido-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;"><strong>👤 ${p.cliente}</strong><span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span></div>
-                    <div style="margin:15px 0; font-size:0.95rem;">${itemsHTML}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:bold; color:var(--success); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
-                        <button class="btn-ready" onclick="completar('${docSnap.id}')">LISTO</button>
-                    </div>
-                </div>`;
-            } else if (p.estado === 'completado' && p.timestamp?.toDate().toDateString() === hoy) {
-                la.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">
-                    <span><strong>${p.cliente}</strong> <small style="color:#94a3b8; margin-left:10px;">${p.tipo}</small></span>
-                    <span style="color:var(--success); font-weight:700;">$${Number(p.total).toLocaleString()}</span>
-                </div>`;
-            }
-        });
-        if(pCount > totalPAnterior) sonar();
-        totalPAnterior = pCount;
-        procesarEstadisticas(allPedidos);
-    });
-};
-
 const escucharMenu = () => {
     onSnapshot(collection(db, "platos"), (sn) => {
         const inv = document.getElementById('inv-list');
@@ -113,9 +104,9 @@ const escucharMenu = () => {
             <div class="admin-row">
                 <div style="display:flex; flex-direction:column;"><strong>${d.nombre}</strong><span style="font-size:0.8rem; color:var(--success); font-weight:700;">$${Number(d.precio).toLocaleString()}</span></div>
                 <div class="actions">
-                    <label class="switch"><input type="checkbox" ${d.disponible !== false ? 'checked' : ''} onchange="toggleStock('${docSnap.id}', this.checked)"><span class="slider"></span></label>
-                    <button onclick="prepararEdicion('${docSnap.id}')" class="btn-icon btn-edit-icon">${ICON_EDIT}</button>
-                    <button onclick="triggerDelete('${docSnap.id}')" class="btn-icon btn-delete-icon">${ICON_TRASH}</button>
+                    <label class="switch" style="position:relative;display:inline-block;width:42px;height:22px;"><input type="checkbox" ${d.disponible !== false ? 'checked' : ''} onchange="toggleStock('${docSnap.id}', this.checked)" style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:34px;transition:.4s;" class="slider"></span></label>
+                    <button onclick="prepararEdicion('${docSnap.id}')" class="btn-icon">${ICON_EDIT}</button>
+                    <button onclick="triggerDelete('${docSnap.id}')" class="btn-icon" style="color:var(--danger);">${ICON_TRASH}</button>
                 </div>
             </div>`;
             const target = document.getElementById(`adm-${d.categoria}`);
@@ -145,7 +136,6 @@ window.prepararEdicion = async (id) => {
     document.getElementById('price').value = d.precio; document.getElementById('category').value = d.categoria;
     document.getElementById('desc').value = d.descripcion || ''; document.getElementById('ingredients').value = d.ingredientes?.join(',') || '';
     document.getElementById('f-title').innerText = "✏️ Editando: " + d.nombre;
-    document.querySelector('.main-content').scrollTo({top: 0, behavior: 'smooth'});
 };
 window.cancelarEdicion = () => { document.getElementById('edit-id').value = ""; document.getElementById('f-title').innerText = "➕ Gestionar Carta"; document.getElementById('m-form').reset(); };
 document.getElementById('m-form').onsubmit = async (e) => {
