@@ -4,11 +4,17 @@ import { collection, addDoc, onSnapshot, doc, query, orderBy, serverTimestamp } 
 let carrito = [];
 const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
-// Mejor método de sonido para forzar a móviles a cargarlo
-const SOUND_ADD = document.createElement('audio');
-SOUND_ADD.src = 'https://assets.mixkit.co/sfx/preview/mixkit-bubble-pop-up-alert-2358.mp3';
+const SOUND_ADD = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-bubble-pop-up-alert-2358.mp3');
 SOUND_ADD.preload = 'auto';
-document.body.appendChild(SOUND_ADD);
+
+// NUEVO: Truco para forzar desbloqueo de audio en celulares (iOS/Android)
+document.body.addEventListener('click', function unlockAudio() {
+    SOUND_ADD.play().then(() => {
+        SOUND_ADD.pause();
+        SOUND_ADD.currentTime = 0;
+    }).catch(e => {});
+    document.body.removeEventListener('click', unlockAudio);
+}, { once: true });
 
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
@@ -54,7 +60,6 @@ window.agregarAlCarrito = (nombre, precio, id) => {
     if(existeIndex !== -1) {
         carrito[existeIndex].cantidad += cantidad; 
     } else {
-        // Ya NO guardamos la variable 'nota'
         carrito.push({ nombre, precio: Number(precio), cantidad: cantidad, id, excluidos });
     }
     
@@ -62,8 +67,9 @@ window.agregarAlCarrito = (nombre, precio, id) => {
     
     document.querySelectorAll(`#dish-${id} .ing-pill.excluido`).forEach(el => el.classList.remove('excluido'));
     
+    // Reproducir sonido ya desbloqueado
     SOUND_ADD.currentTime = 0;
-    SOUND_ADD.play().catch(e => console.log('Sonido bloqueado por el navegador (o celular en silencio)'));
+    SOUND_ADD.play().catch(e => console.log('Sonido bloqueado temporalmente.'));
 
     const cartFab = document.querySelector('.cart-fab');
     if (cartFab) {
@@ -94,7 +100,6 @@ function actualizarCarrito() {
             ? `<div style="color:#ef4444; font-size:0.75rem; font-weight:600; margin-top:4px;">❌ Sin: ${item.excluidos.join(', ')}</div>` 
             : '';
 
-        // Se eliminó el textarea (cuadro de nota)
         cont.innerHTML += `
         <div class="cart-item-row">
             <div>
@@ -130,7 +135,6 @@ window.enviarPedido = async () => {
     let itemsParaEnviar = [];
     carrito.forEach(item => {
         for(let k = 0; k < item.cantidad; k++) {
-            // Ya no enviamos variable 'nota' a la base de datos
             itemsParaEnviar.push({
                 nombre: item.nombre,
                 precio: item.precio,
@@ -206,17 +210,19 @@ onSnapshot(collection(db, "platos"), (snapshot) => {
 
         let ingredientesHTML = '';
         if (d.ingredientes && d.ingredientes.length > 0) {
-            // MOVIDO: Ahora los ingredientes están estructurados para ir dentro del menú desplegable
+            // NUEVO: La instrucción ahora usa la clase "ing-instruction" para animarse
             ingredientesHTML = `
             <div style="margin-bottom: 16px; padding-top: 10px; border-top: 1px dashed #eee;">
-                <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px; font-weight:600;">Ingredientes <span style="font-weight:400;">(Toca para quitarlos de tu plato)</span>:</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:0.85rem; color:var(--text-muted); font-weight:600;">Ingredientes:</span>
+                    <span class="ing-instruction">👉 Toca para quitar</span>
+                </div>
                 <div class="ing-container" style="margin: 0;">
                     ${d.ingredientes.map(i => `<span class="ing-pill" onclick="event.stopPropagation(); this.classList.toggle('excluido')" title="Toca para quitar">${i}</span>`).join('')}
                 </div>
             </div>`;
         }
 
-        // Estructura actualizada: Ingredientes pasan a estar DENTRO de expand-content
         const html = `
         <div class="dish-item" id="dish-${docSnap.id}">
             <div class="dish-header" onclick="toggleDish(this)">
