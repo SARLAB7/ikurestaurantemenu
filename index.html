@@ -3,24 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú Interactivo | IKU</title>
-    
+    <title>IKU Restaurante Bar | Menú</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header class="hero">
             <div class="brand-header">
-                <p class="overline">RESTAURANTE BAR</p>
+                <p class="overline">BIENVENIDO A</p>
                 <h1>IKU</h1>
+                <p class="brand-sub">RESTAURANTE BAR</p>
             </div>
             <div class="info-box">
-                <p><strong>PUEBLO BELLO, CESAR</strong></p>
-                <p class="tagline">★ Sabor ancestral ★</p>
-                <p class=>Lun a vie 7:00 am - 4:00 pm</p>
-                 <p class=>sab a dom 7:00 am - 10:00 pm</p>
+                <p><strong>Pueblo Bello, Cesar</strong></p>
+                <p class="tagline">★ Sabor que conecta ★</p>
             </div>
         </header>
 
@@ -31,12 +28,34 @@
                 <button class="tab-btn" data-tab="varios">Varios</button>
             </nav>
 
-            <div id="loader" class="loader">Preparando el menú...</div>
+            <div id="loader" class="loader">Preparando algo delicioso...</div>
             
             <section id="diario" class="menu-section active"></section>
             <section id="rapida" class="menu-section"></section>
             <section id="varios" class="menu-section"></section>
         </main>
+    </div>
+
+    <div id="cart-fab" class="cart-fab" onclick="toggleCart()">
+        <span class="cart-count">0</span>
+        <span class="cart-icon">🛒</span>
+    </div>
+
+    <div id="cart-modal" class="cart-modal">
+        <div class="cart-header">
+            <h3>Tu Pedido en IKU</h3>
+            <button onclick="toggleCart()" class="close-cart">✕</button>
+        </div>
+        <div id="cart-items" class="cart-items-list"></div>
+        <div class="cart-footer">
+            <div class="total-row">
+                <span>Total:</span>
+                <span id="cart-total-price">$0</span>
+            </div>
+            <button class="btn-send-order" onclick="enviarPedido()">
+                PEDIR POR WHATSAPP
+            </button>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
