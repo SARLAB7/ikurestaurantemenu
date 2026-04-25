@@ -74,13 +74,12 @@ window.enviarPedido = async () => {
     } catch (e) { alert("Error: " + e.message); }
 };
 
-// Escucha de platos con filtrado corregido
+// Carga de platos
 onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) => {
     const sDiario = document.getElementById('diario');
     const sRapida = document.getElementById('rapida');
     const sVarios = document.getElementById('varios');
     
-    // Limpieza total antes de cargar
     if(sDiario) sDiario.innerHTML = '';
     if(sRapida) sRapida.innerHTML = '';
     if(sVarios) sVarios.innerHTML = '';
@@ -110,19 +109,37 @@ onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (sn) =
                 </div>
             </div>`;
         
-        // Asignación estricta por categoría
         if (d.categoria === 'diario' && sDiario) sDiario.innerHTML += html;
         else if (d.categoria === 'rapida' && sRapida) sRapida.innerHTML += html;
         else if (d.categoria === 'varios' && sVarios) sVarios.innerHTML += html;
     });
 });
 
+// --- SOLUCIÓN FUNCIONAL DE LAS PESTAÑAS (TABS) ---
+
+// 1. Ocultar de entrada todo lo que no sea la pestaña activa
+document.querySelectorAll('.menu-section').forEach(s => {
+    s.style.display = s.classList.contains('active') ? 'block' : 'none';
+});
+
+// 2. Controlar la visibilidad al hacer clic
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
+        // Quitar la clase active a todos los botones
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
+        
+        // Ocultar todas las secciones forzando display: none
+        document.querySelectorAll('.menu-section').forEach(s => {
+            s.classList.remove('active');
+            s.style.display = 'none';
+        });
+        
+        // Activar el botón y MOSTRAR la sección seleccionada
         btn.classList.add('active');
         const target = document.getElementById(btn.dataset.tab);
-        if(target) target.classList.add('active');
+        if(target) {
+            target.classList.add('active');
+            target.style.display = 'block'; // <-- ESTO EVITA QUE SE VEAN REPETIDOS
+        }
     };
 });
