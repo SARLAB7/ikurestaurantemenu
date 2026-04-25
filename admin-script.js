@@ -118,11 +118,20 @@ const procesarEstadisticas = (pedidos) => {
 
 const escucharCarta = () => {
     onSnapshot(collection(db, "platos"), (sn) => {
+        // --- INICIO CORRECCIÓN DE FUNCIONALIDAD ---
+        // 1. Guardamos qué grupos estaban abiertos (usando su ID)
+        const gruposAbiertos = [];
+        document.querySelectorAll('.admin-group.open').forEach(g => gruposAbiertos.push(g.id));
+        
+        // 2. Guardamos la posición exacta del scroll
+        const scrollActual = document.querySelector('.main-content').scrollTop;
+        // --- FIN CORRECCIÓN ---
+
         const inv = document.getElementById('inv-list');
         inv.innerHTML = `
-            <div class="admin-group open"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>📅 Menú del Día</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-diario"></div></div>
-            <div class="admin-group"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>🍔 Comidas Rápidas</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-rapida"></div></div>
-            <div class="admin-group"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>✨ Varios</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-varios"></div></div>
+            <div class="admin-group" id="g-diario"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>📅 Menú del Día</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-diario"></div></div>
+            <div class="admin-group" id="g-rapida"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>🍔 Comidas Rápidas</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-rapida"></div></div>
+            <div class="admin-group" id="g-varios"><div class="admin-group-header" onclick="toggleSeccion(this)"><h4>✨ Varios</h4><span class="chevron">▼</span></div><div class="admin-group-content" id="adm-varios"></div></div>
         `;
         
         catalogoPlatos = {}; 
@@ -145,6 +154,23 @@ const escucharCarta = () => {
             const target = document.getElementById(`adm-${d.categoria}`);
             if(target) target.innerHTML += html;
         });
+
+        // --- RESTAURAR ESTADO ---
+        // 3. Volvemos a abrir los grupos que estaban abiertos
+        gruposAbiertos.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.add('open');
+        });
+        
+        // Si es la primera vez que carga, abrimos el menú del día por defecto
+        if(gruposAbiertos.length === 0 && document.getElementById('g-diario')) {
+            document.getElementById('g-diario').classList.add('open');
+        }
+
+        // 4. Devolvemos el scroll a su posición original
+        setTimeout(() => {
+            document.querySelector('.main-content').scrollTop = scrollActual;
+        }, 0);
     });
 };
 
@@ -170,7 +196,9 @@ window.prepararEdicion = async (id) => {
     document.getElementById('desc').value = d.descripcion || '';
     document.getElementById('ingredients').value = Array.isArray(d.ingredientes) ? d.ingredientes.join(',') : d.ingredientes || '';
     document.getElementById('f-title').innerText = "✏️ Editando: " + d.nombre;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Al editar SI queremos que suba un poco para ver el formulario
+    document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.cancelarEdicion = () => {
