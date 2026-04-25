@@ -6,83 +6,54 @@ const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com"];
 let totalPAnterior = 0;
 
-const ICON_EDIT = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
-const ICON_TRASH = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+// Restauración de Iconos SVG Originales
+const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
 const sonar = () => { const a = document.getElementById('notif-sound'); if(a) a.play().catch(e => {}); };
 
-// INTELIGENCIA DE SUMINISTROS Y VENTAS
+// PROCESAR ESTADÍSTICAS SIMPLES
 const procesarEstadisticas = async (pedidos) => {
     const ahora = new Date();
     const mesActual = `${ahora.getMonth() + 1}-${ahora.getFullYear()}`;
     const hoyStr = ahora.toDateString();
     let vHoy = 0, vMes = 0;
-    
-    const conteoPlatos = {};
-    const conteoIngredientes = {};
+    const conteoGlobal = {};
 
-    // Obtener mapa de ingredientes por plato
     const platosSnap = await getDocs(collection(db, "platos"));
-    const dataPlatos = {};
-    platosSnap.forEach(d => { 
-        const item = d.data();
-        dataPlatos[item.nombre] = {
-            cat: item.categoria,
-            ing: Array.isArray(item.ingredientes) ? item.ingredientes : (item.ingredientes ? item.ingredientes.split(',') : [])
-        };
-    });
+    const catMapa = {};
+    platosSnap.forEach(d => { catMapa[d.data().nombre] = d.data().categoria; });
 
     pedidos.forEach(p => {
         if (p.estado !== 'completado' || !p.timestamp) return;
         const f = p.timestamp.toDate();
         const mKey = `${f.getMonth() + 1}-${f.getFullYear()}`;
-        
         if (f.toDateString() === hoyStr) vHoy += p.total;
-        if (mKey === mesActual) {
-            vMes += p.total;
-            p.items.forEach(item => {
-                // Contar platos
-                conteoPlatos[item.nombre] = (conteoPlatos[item.nombre] || 0) + 1;
-                
-                // Contar ingredientes "gastados"
-                if (dataPlatos[item.nombre]) {
-                    dataPlatos[item.nombre].ing.forEach(ing => {
-                        const cleanIng = ing.trim().toLowerCase();
-                        if(cleanIng) conteoIngredientes[cleanIng] = (conteoIngredientes[cleanIng] || 0) + 1;
-                    });
-                }
-            });
-        }
+        if (mKey === mesActual) vMes += p.total;
+        p.items.forEach(i => {
+            if (mKey === mesActual) {
+                if (!conteoGlobal[i.nombre]) conteoGlobal[i.nombre] = { cantidad: 0, cat: catMapa[i.nombre] || 'varios' };
+                conteoGlobal[i.nombre].cantidad++;
+            }
+        });
     });
 
-    // Actualizar Totales
     const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
     document.getElementById('s-hoy').innerText = fmt(vHoy);
     document.getElementById('s-mes').innerText = fmt(vMes);
 
-    // Actualizar Plato Estrella
-    const topPlato = Object.keys(conteoPlatos).reduce((a, b) => conteoPlatos[a] > conteoPlatos[b] ? a : b, "---");
-    document.getElementById('top-plato-name').innerText = topPlato;
-    document.getElementById('top-plato-cat').innerText = dataPlatos[topPlato]?.cat.toUpperCase() || "---";
-
-    // Actualizar Lista de Ingredientes (Top 5 más usados)
-    const ingStatsDiv = document.getElementById('ing-stats');
-    if (ingStatsDiv) {
-        const sortedIng = Object.entries(conteoIngredientes).sort((a,b) => b[1] - a[1]).slice(0, 5);
-        if (sortedIng.length === 0) {
-            ingStatsDiv.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">Sin datos de ventas este mes.</p>';
-        } else {
-            const maxUso = sortedIng[0][1];
-            ingStatsDiv.innerHTML = sortedIng.map(([name, count]) => `
-                <div class="ing-item">
-                    <span style="font-size:0.85rem; font-weight:600; width:80px; text-transform:capitalize;">${name}</span>
-                    <div class="ing-bar-container">
-                        <div class="ing-bar" style="width: ${(count/maxUso)*100}%"></div>
-                    </div>
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">${count} pedidos</span>
-                </div>
-            `).join('');
-        }
+    const rDiv = document.getElementById('rankings-categoria');
+    if(rDiv) {
+        const tops = { diario: '---', rapida: '---', varios: '---' };
+        const maxC = { diario: 0, rapida: 0, varios: 0 };
+        Object.keys(conteoGlobal).forEach(nom => {
+            const inf = conteoGlobal[nom];
+            if (inf.cantidad > maxC[inf.cat]) { maxC[inf.cat] = inf.cantidad; tops[inf.cat] = nom; }
+        });
+        rDiv.innerHTML = `
+            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>📅 Menú Día</strong><br>${tops.diario}</div>
+            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>🍔 Rápidas</strong><br>${tops.rapida}</div>
+            <div style="padding:15px; background:#f8fafc; border-radius:12px; font-size:0.8rem;"><strong>✨ Varios</strong><br>${tops.varios}</div>`;
     }
 };
 
@@ -99,30 +70,24 @@ const escucharData = () => {
             const p = docSnap.data();
             allPedidos.push(p);
 
+            const itemsHTML = p.items.map(i => `
+                <div style="margin-bottom:8px;">• <strong>${i.nombre}</strong> ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}</div>
+            `).join('');
+
             if (p.estado === 'pendiente') {
                 pCount++;
-                const itemsHTML = p.items.map(i => `
-                    <div style="margin-bottom:8px; border-bottom:1px solid #f1f1f1; padding-bottom:5px;">
-                        • <strong>${i.nombre}</strong>
-                        ${i.nota ? `<span class="item-nota">⚠️ NOTA: ${i.nota}</span>` : ''}
-                    </div>
-                `).join('');
-
                 lp.innerHTML += `
                 <div class="pedido-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <strong>👤 ${p.cliente}</strong>
-                        <span style="font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span>
-                    </div>
-                    <div style="margin:15px 0;">${itemsHTML}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><strong>👤 ${p.cliente}</strong><span style="font-size:0.65rem; font-weight:700; padding:4px 10px; border-radius:20px; background:#f1f5f9; color:#64748b;">${p.tipo.toUpperCase()}</span></div>
+                    <div style="margin:15px 0; font-size:0.95rem;">${itemsHTML}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; color:var(--success); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
-                        <button class="btn-ready" onclick="completar('${docSnap.id}')">DESPACHAR</button>
+                        <span style="font-weight:bold; color:var(--success); font-size:1.1rem;">$${Number(p.total).toLocaleString()}</span>
+                        <button class="btn-ready" onclick="completar('${docSnap.id}')">LISTO</button>
                     </div>
                 </div>`;
             } else if (p.estado === 'completado' && p.timestamp?.toDate().toDateString() === hoy) {
                 la.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:15px 20px; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">
+                <div style="display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #f1f5f9; font-size:0.9rem;">
                     <span><strong>${p.cliente}</strong> <small style="color:#94a3b8; margin-left:10px;">${p.tipo}</small></span>
                     <span style="color:var(--success); font-weight:700;">$${Number(p.total).toLocaleString()}</span>
                 </div>`;
@@ -146,11 +111,11 @@ const escucharMenu = () => {
             const d = docSnap.data();
             const html = `
             <div class="admin-row">
-                <div style="display:flex; flex-direction:column;"><strong>${d.nombre}</strong><span style="font-size:0.85rem; color:var(--success); font-weight:600;">$${Number(d.precio).toLocaleString()}</span></div>
-                <div style="display:flex; gap:15px; align-items:center;">
+                <div style="display:flex; flex-direction:column;"><strong>${d.nombre}</strong><span style="font-size:0.8rem; color:var(--success); font-weight:700;">$${Number(d.precio).toLocaleString()}</span></div>
+                <div class="actions">
                     <label class="switch"><input type="checkbox" ${d.disponible !== false ? 'checked' : ''} onchange="toggleStock('${docSnap.id}', this.checked)"><span class="slider"></span></label>
-                    <button onclick="prepararEdicion('${docSnap.id}')" style="color:var(--sidebar); border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
-                    <button onclick="triggerDelete('${docSnap.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
+                    <button onclick="prepararEdicion('${docSnap.id}')" class="btn-icon btn-edit-icon">${ICON_EDIT}</button>
+                    <button onclick="triggerDelete('${docSnap.id}')" class="btn-icon btn-delete-icon">${ICON_TRASH}</button>
                 </div>
             </div>`;
             const target = document.getElementById(`adm-${d.categoria}`);
@@ -159,7 +124,6 @@ const escucharMenu = () => {
     });
 };
 
-// ... (Resto de funciones: completar, toggleStock, triggerDelete, triggerResetStats, prepararEdicion, etc se mantienen iguales)
 window.completar = (id) => updateDoc(doc(db, "pedidos", id), { estado: 'completado' });
 window.toggleStock = (id, val) => updateDoc(doc(db, "platos", id), { disponible: val });
 
