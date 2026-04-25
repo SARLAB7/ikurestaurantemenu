@@ -7,46 +7,54 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --sidebar: #0f1115; --accent: #ffcc00; --bg: #f8fafc; --white: #ffffff; --success: #22c55e; --danger: #ef4444; --text: #334155; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; color: var(--text); }
         
-        /* Sidebar Estilo Industrial */
-        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        /* Layout corregido: Barra de scroll a la derecha */
+        body { background: var(--bg); display: flex; height: 100vh; width: 100vw; overflow: hidden; color: var(--text); }
+        
+        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; z-index: 100; }
         .sidebar h2 { color: var(--accent); text-align: center; margin-bottom: 40px; letter-spacing: 3px; font-weight: 700; }
+        
         .nav-item { padding: 16px 28px; cursor: pointer; color: #94a3b8; transition: 0.3s; border-left: 4px solid transparent; display: flex; align-items: center; gap: 12px; }
         .nav-item.active { background: #1e293b; color: white; border-left-color: var(--accent); }
         
-        .main-content { flex: 1; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
-        .view-section { display: none; }
+        .main-content { flex: 1; height: 100vh; overflow-y: auto; padding: 40px; scroll-behavior: smooth; position: relative; }
+        
+        .view-section { display: none; width: 100%; max-width: 1000px; margin: 0 auto; }
         .view-section.active { display: block; }
         
-        /* Tarjetas de Pedidos */
+        /* Tarjetas de Pedidos y Notas */
         .pedido-card { background: white; padding: 20px; border-radius: 16px; border-left: 6px solid var(--accent); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .pedido-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .badge-tipo { font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #f1f5f9; color: #64748b; }
-        
-        /* ESTILO PARA LAS NOTAS (Muy importante para cocina) */
-        .item-nota { font-size: 0.85rem; color: #d63031; font-weight: 600; font-style: italic; background: #fff5f5; padding: 2px 8px; border-radius: 4px; display: block; margin-top: 4px; border-left: 3px solid #ff7675; }
+        .item-nota { font-size: 0.85rem; color: #d63031; font-weight: 600; font-style: italic; background: #fff5f5; padding: 4px 10px; border-radius: 6px; display: block; margin-top: 6px; border-left: 3px solid #ff7675; }
 
-        /* Atendidos Hoy (Colapsable) */
+        /* Despachados Colapsable */
         .atendidos-container { margin-top: 50px; border: 1px dashed #cbd5e1; border-radius: 16px; overflow: hidden; }
-        .atendidos-header { background: #f8fafc; padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; }
+        .atendidos-header { background: #f8fafc; padding: 15px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .atendidos-header h4 { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
         .atendidos-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background: white; }
-        .atendidos-container.open .atendidos-content { max-height: 2000px; padding: 10px 0; }
+        .atendidos-container.open .atendidos-content { max-height: 2000px; padding: 10px 0; border-top: 1px dashed #cbd5e1; }
         .chevron { transition: transform 0.3s; font-size: 0.7rem; color: #94a3b8; }
         .atendidos-container.open .chevron { transform: rotate(180deg); }
 
-        /* Inventario Acordeón */
-        .admin-group { margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+        /* Inventario */
+        .admin-group { margin-bottom: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
         .admin-group-header { background: #fff; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .admin-group-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
-        .admin-group.open .admin-group-content { max-height: 1000px; }
+        .admin-group.open .admin-group-content { max-height: 1500px; }
         .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid #f1f5f9; }
 
-        /* Botones y Modales */
-        .btn-ready { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-ready:hover { background: #16a34a; transform: scale(1.02); }
+        /* Botones de Acción */
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .btn-ready { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        
+        /* Estilo para los botones de iconos restaurados */
+        .btn-icon { width: 34px; height: 34px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; background: #f8fafc; }
+        .btn-edit-icon { color: #210DAA; }
+        .btn-edit-icon:hover { background: #eff6ff; }
+        .btn-delete-icon { color: var(--danger); }
+        .btn-delete-icon:hover { background: #fef2f2; }
+
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(4px); }
         .modal-card { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 340px; text-align: center; }
         
@@ -57,8 +65,10 @@
         input:checked + .slider { background: var(--success); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1.5px solid #e2e8f0; }
-        .btn-save { background: var(--sidebar); color: var(--accent); padding: 16px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1.5px solid #e2e8f0; outline: none; }
+        .btn-save { background: #0f1115; color: var(--accent); padding: 16px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
+
+        #login-screen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 2000; }
     </style>
 </head>
 <body>
@@ -66,10 +76,10 @@
 
     <div id="delete-modal" class="modal-overlay">
         <div class="modal-card">
-            <h3 id="modal-title">¿Eliminar plato?</h3>
-            <p id="modal-desc" style="color:#64748b; font-size: 0.85rem; margin-top: 5px;">Esta acción no se puede deshacer.</p>
+            <h3 id="modal-title">¿Confirmar acción?</h3>
+            <p id="modal-desc" style="color:#64748b; font-size: 0.85rem; margin-top: 5px;">Esta acción es permanente.</p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeModal()" style="flex:1; padding:12px; border-radius:10px; border:none; background:#f1f5f9; font-weight:700; cursor:pointer;">Cancelar</button>
+                <button onclick="closeModal()" style="flex:1; padding:12px; border-radius:10px; border:none; background:#f1f5f9; cursor:pointer;">Cancelar</button>
                 <button id="confirm-delete-btn" style="flex:1; padding:12px; border-radius:10px; border:none; background:var(--danger); color:white; font-weight:700; cursor:pointer;">Confirmar</button>
             </div>
         </div>
@@ -77,8 +87,8 @@
 
     <div id="login-screen">
         <div style="background:white; padding:40px; border-radius:20px; text-align:center;">
-            <h1 style="letter-spacing: 4px;">IKU</h1>
-            <button id="login-btn" style="background:var(--sidebar); color:var(--accent); border:none; padding:12px 30px; border-radius:10px; cursor:pointer; margin-top:20px; font-weight:bold;">INGRESAR AL PANEL</button>
+            <h1>IKU</h1>
+            <button id="login-btn" style="background:#0f1115; color:#ffcc00; border:none; padding:12px 30px; border-radius:10px; cursor:pointer; margin-top:20px; font-weight:bold;">INGRESAR AL PANEL</button>
         </div>
     </div>
 
@@ -95,17 +105,14 @@
 
         <main class="main-content">
             <section id="v-pedidos" class="view-section active">
-                <h3>🔔 Pedidos del Día</h3>
-                <div id="l-pendientes" style="margin-top:20px;"></div>
-
+                <h3 style="margin-bottom:20px;">🔔 Pedidos del Día</h3>
+                <div id="l-pendientes"></div>
                 <div class="atendidos-container" id="atendidos-toggle">
                     <div class="atendidos-header" onclick="toggleAtendidos()">
                         <h4>✅ Despachados (Hoy)</h4>
                         <span class="chevron">▼</span>
                     </div>
-                    <div class="atendidos-content">
-                        <div id="l-atendidos"></div>
-                    </div>
+                    <div class="atendidos-content"><div id="l-atendidos"></div></div>
                 </div>
             </section>
 
@@ -115,7 +122,7 @@
                     <form id="m-form" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:20px;">
                         <input type="hidden" id="edit-id">
                         <input type="text" id="name" placeholder="Nombre" required>
-                        <input type="number" id="price" placeholder="Precio" required>
+                        <input type="number" id="price" placeholder="Precio ($)" required>
                         <select id="category"><option value="diario">Menú del Día</option><option value="rapida">Comidas Rápidas</option><option value="varios">Varios</option></select>
                         <input type="text" id="ingredients" placeholder="Ingredientes (con coma)">
                         <textarea id="desc" placeholder="Descripción corta..." style="grid-column: span 2; height: 80px;"></textarea>
@@ -132,11 +139,11 @@
                     <button id="btn-reset-stats" style="display:none; color:var(--danger); background:none; border:1px solid var(--danger); padding:8px 15px; border-radius:10px; cursor:pointer; font-size:0.75rem; font-weight:600;" onclick="triggerResetStats()">Reiniciar Estadísticas</button>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:25px;">
-                    <div style="background:var(--sidebar); color:var(--accent); padding:25px; border-radius:16px;"><p style="font-size:0.7rem; opacity:0.8;">HOY</p><h2 id="s-hoy">$0</h2></div>
+                    <div style="background:#0f1115; color:#ffcc00; padding:25px; border-radius:16px;"><p style="font-size:0.7rem; opacity:0.8;">HOY</p><h2 id="s-hoy">$0</h2></div>
                     <div style="background:var(--success); color:white; padding:25px; border-radius:16px;"><p style="font-size:0.7rem; opacity:0.8;">MES</p><h2 id="s-mes">$0</h2></div>
                 </div>
                 <div style="background:white; padding:25px; border-radius:16px;">
-                    <h3>🏆 Favoritos</h3>
+                    <h3>🏆 Favoritos del Mes</h3>
                     <div id="rankings-categoria" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-top:15px;"></div>
                 </div>
             </section>
