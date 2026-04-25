@@ -63,8 +63,14 @@
                     <option value="mesa">🍽️ Mesa (Comer aquí)</option>
                     <option value="domicilio">🛵 Domicilio</option>
                 </select>
-
+                
                 <input type="text" id="nombre-cliente" placeholder="Nombre y # de Mesa">
+
+                <select id="metodo-pago">
+                    <option value="efectivo">💵 Pago en Efectivo</option>
+                    <option value="nequi">🟣 Pago por Nequi</option>
+                    <option value="bancolombia">🟡 Pago por Bancolombia</option>
+                </select>
 
                 <div class="whatsapp-check">
                     <input type="checkbox" id="check-whatsapp">
@@ -75,6 +81,20 @@
             <button class="btn-send-order" onclick="enviarPedido()">
                 CONFIRMAR PEDIDO
             </button>
+        </div>
+    </div>
+
+    <div id="tracker-modal" class="cart-modal">
+        <div class="cart-header">
+            <h3>Estado de tu Pedido</h3>
+            <button class="close-cart" onclick="cerrarTracker()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div style="padding: 40px 20px; text-align: center; display:flex; flex-direction:column; gap:20px; align-items:center;">
+            <div id="tracker-icon" style="font-size: 4rem;">📥</div>
+            <h2 id="tracker-status" style="font-family: var(--font-serif); font-size: 2rem; color: var(--primary);">Recibido</h2>
+            <p id="tracker-desc" style="color: var(--text-muted);">Tu pedido ha sido enviado a la cocina.</p>
         </div>
     </div>
 
