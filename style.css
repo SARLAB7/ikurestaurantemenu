@@ -1,81 +1,90 @@
 @import url('variables.css');
 
+/* --- BASE --- */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: var(--font-main); background-color: var(--bg-main); color: var(--primary); overflow-x: hidden; }
+
 /* --- LAYOUT RESPONSIVE --- */
-.container {
-    display: flex;
-    flex-direction: row; /* Escritorio */
-    min-height: 100vh;
+.container { display: flex; flex-direction: row; min-height: 100vh; }
+
+.hero { 
+    flex: 1; 
+    background: linear-gradient(rgba(0,0,0,0.6), var(--primary)), url('Iku F.jpg') center/cover no-repeat;
+    color: white; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    position: sticky; top: 0; height: 100vh; text-align: center; padding: 40px;
 }
 
-@media (max-width: 768px) {
-    .container {
-        flex-direction: column; /* Móvil */
-    }
+.hero h1 { font-size: 5rem; border-bottom: 5px solid var(--accent); line-height: 1; margin-bottom: 10px; }
 
-    .hero {
-        height: 35vh !important;
-        position: relative !important;
-        padding: 20px !important;
-    }
+.menu-content { flex: 1.5; padding: 40px; background: var(--bg-main); }
 
-    .hero h1 { font-size: 3rem !important; }
+/* --- TABS (Categorías) --- */
+.tabs { 
+    display: flex; gap: 10px; margin-bottom: 30px; 
+    position: sticky; top: 0; background: var(--bg-main); z-index: 100; padding: 10px 0;
+}
+.tab-btn { 
+    padding: 10px 20px; border: 1px solid var(--border); border-radius: 20px; 
+    background: white; cursor: pointer; transition: 0.3s; font-weight: 600;
+}
+.tab-btn.active { background: var(--primary); color: var(--accent); border-color: var(--primary); }
 
-    .menu-content {
-        padding: 15px !important;
-    }
+/* --- SECCIONES DE MENÚ --- */
+.menu-section { display: none; }
+.menu-section.active { display: grid; grid-template-columns: 1fr; gap: 15px; }
 
-    /* Tabs con scroll horizontal si hay muchas
+/* --- PLATOS (CARDS) --- */
+.menu-item { 
+    background: white; border-radius: 15px; border: 1px solid var(--border); 
+    overflow: hidden; transition: 0.3s; 
+}
+.dish-info { padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.dish-text h3 { font-size: 1.1rem; margin-bottom: 5px; }
+.dish-text p { color: var(--text-muted); font-size: 0.9rem; }
+.dish-price { color: var(--success); font-weight: 700; font-size: 1.1rem; }
 
-    /* --- MODAL DEL CARRITO --- */
+/* Contenido expandible al tocar el plato */
+.expand-content { 
+    max-height: 0; overflow: hidden; transition: 0.3s ease-out; 
+    background: #fafafa; padding: 0 20px; 
+}
+.menu-item.active .expand-content { max-height: 200px; padding: 20px; border-top: 1px dashed var(--border); }
+
+.qty-control { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+.btn-qty { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; }
+.btn-add-cart { width: 100%; padding: 12px; background: var(--primary); color: var(--accent); border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+
+/* --- MODAL DEL CARRITO --- */
 .cart-modal {
-    position: fixed;
-    inset: 0; /* Cubre toda la pantalla */
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: flex-end;
-    z-index: 3000;
-    visibility: hidden;
-    opacity: 0;
-    transition: var(--modal-transition);
-    cursor: pointer; /* Indica que se puede hacer clic para cerrar */
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+    display: flex; justify-content: flex-end; z-index: 3000;
+    visibility: hidden; opacity: 0; transition: var(--modal-transition);
+    cursor: pointer;
 }
-
-.cart-modal.active {
-    visibility: visible;
-    opacity: 1;
-}
+.cart-modal.active { visibility: visible; opacity: 1; }
 
 .modal-content {
-    width: 400px;
-    height: 100%;
-    background: var(--white);
-    cursor: default; /* Dentro del carrito el cursor es normal */
-    transform: translateX(100%);
-    transition: var(--modal-transition);
-    display: flex;
-    flex-direction: column;
+    width: 400px; height: 100%; background: var(--white);
+    cursor: default; transform: translateX(100%);
+    transition: var(--modal-transition); display: flex; flex-direction: column;
 }
+.cart-modal.active .modal-content { transform: translateX(0); }
 
-.cart-modal.active .modal-content {
-    transform: translateX(0);
-}
-
-/* MÓVIL: El carrito sale de abajo */
+/* --- RESPONSIVE MÓVIL --- */
 @media (max-width: 768px) {
-    .cart-modal {
-        align-items: flex-end;
-        justify-content: center;
+    .container { flex-direction: column; }
+    .hero { height: 35vh; position: relative; padding: 20px; }
+    .hero h1 { font-size: 3rem; }
+    .menu-content { padding: 15px; }
+    
+    .tabs { overflow-x: auto; white-space: nowrap; padding-bottom: 15px; }
+    
+    .cart-modal { align-items: flex-end; justify-content: center; }
+    .modal-content { 
+        width: 100%; height: 85vh; border-radius: 25px 25px 0 0; 
+        transform: translateY(100%); /* Solo usamos Y en móvil */
     }
-
-    .modal-content {
-        width: 100%;
-        height: 85vh;
-        border-radius: 20px 20px 0 0;
-        transform: translateY(100%);
-    }
-
-    .cart-modal.active .modal-content {
-        transform: translateY(0);
-        transform: translateX(0); /* Reset de la animación horizontal */
+    .cart-modal.active .modal-content { 
+        transform: translateY(0); /* Aquí corregimos el error anterior */
     }
 }
