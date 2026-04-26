@@ -18,9 +18,16 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
+        
+        // MOSTRAR HERRAMIENTAS MASTER SOLO A TI
+        if(u.email === CORREO_MASTER) {
+            document.getElementById('master-tools').style.display = 'block';
+        }
+
         escucharCarta(); 
         escucharPedidos(); 
     } else {
+        // ... resto del código igual
         if(u) signOut(auth);
         document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
