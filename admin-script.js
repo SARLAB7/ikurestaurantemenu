@@ -159,20 +159,72 @@ window.toggleDisponibilidad = async (id, disp) => await updateDoc(doc(db, "plato
 function escucharCarta() {
     onSnapshot(collection(db, "platos"), (snap) => {
         const list = document.getElementById('inv-list');
-        list.innerHTML = '';
-        
-        // Actualiza este objeto con los nuevos nombres
+        if (!list) return;
+
+        // 1. Definir las categorías con sus títulos y un array vacío para sus platos
         const categorias = {
-            diario: "Menú del Día",
-            desayuno: "Desayunos",
-            especial: "Especiales",
-            asado: "Asados",
-            rapida: "Comida Rápida",
-            bebida: "Bebidas"
+            diario: { titulo: "Menú del Día", platos: [] },
+            desayuno: { titulo: "Desayunos", platos: [] },
+            especial: { titulo: "Especiales", platos: [] },
+            asado: { titulo: "Asados", platos: [] },
+            rapida: { titulo: "Comida Rápida", platos: [] },
+            bebida: { titulo: "Bebidas", platos: [] },
+            otros: { titulo: "Otros", platos: [] }
         };
 
-        // El resto del código que genera los grupos se encargará del resto automáticamente
-        // ...
+        // 2. Llenar las categorías con los datos de Firebase
+        snap.forEach(d => {
+            const item = d.data();
+            item.id = d.id;
+            menuGlobal[item.nombre] = item.ingredientes || [];
+
+            if (categorias[item.categoria]) {
+                categorias[item.categoria].platos.push(item);
+            } else {
+                categorias['otros'].platos.push(item);
+            }
+        });
+
+        actualizarMétricas();
+
+        // 3. Generar el HTML
+        let htmlFinal = '';
+        for (const key in categorias) {
+            const cat = categorias[key];
+            if (cat.platos.length === 0) continue;
+
+            let platosHtml = '';
+            cat.platos.forEach(item => {
+                const ingTexto = (item.ingredientes || []).join(', ');
+                platosHtml += `
+                <div style="background:white; padding:15px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;">
+                        <strong style="font-size:1.05rem;">${item.nombre}</strong> <span style="color:var(--text-muted); font-size:0.95rem;">- $${Number(item.precio).toLocaleString()}</span><br>
+                        ${item.descripcion ? `<span style="font-size:0.85rem; color:#6b7280; display:block; margin-top:4px;">${item.descripcion}</span>` : ''}
+                    </div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <label class="switch">
+                            <input type="checkbox" ${item.disponible !== false ? 'checked' : ''} onchange="toggleDisponibilidad('${item.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <button onclick="editarPlato('${item.id}', '${item.nombre}', '${item.precio}', '${item.categoria}', '${item.descripcion || ''}', '${ingTexto}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
+                        <button onclick="eliminarPlatoModal('${item.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
+                    </div>
+                </div>`;
+            });
+
+            htmlFinal += `
+            <div class="admin-group" style="margin-bottom: 15px;">
+                <div class="admin-group-header" onclick="toggleCategoria('cat-${key}', 'chev-${key}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                    <strong>${cat.titulo} (${cat.platos.length})</strong>
+                    <svg id="chev-${key}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div id="cat-${key}" class="lista-categoria-oculta" style="margin-top: 12px; padding: 0 4px;">
+                    ${platosHtml}
+                </div>
+            </div>`;
+        }
+        list.innerHTML = htmlFinal;
     });
 }
 
