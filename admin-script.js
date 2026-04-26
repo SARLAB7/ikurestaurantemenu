@@ -2,14 +2,20 @@ import { db, auth } from './firebase-config.js';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
+// --- ESTADO GLOBAL ---
+let categoriasAbiertas = new Set(); // Guarda qué categorías están desplegadas
+let menuGlobal = {}, pedidosGlobales = [], idParaEliminar = null;
+
 const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com"];
 
+// --- ICONOS ---
 const ICON_PREPARE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`;
 const ICON_X = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
+// --- AUTENTICACIÓN ---
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 
@@ -29,7 +35,97 @@ onAuthStateChanged(auth, (u) => {
     }
 });
 
-let menuGlobal = {}, pedidosGlobales = [], idParaEliminar = null;
+// --- LÓGICA DE ACORDEONES (PERSISTENTE) ---
+window.toggleCategoria = (listaId, chevronId) => {
+    const l = document.getElementById(listaId);
+    const c = document.getElementById(chevronId);
+    
+    if(l) {
+        l.classList.toggle('lista-categoria-oculta');
+        // Guardar o quitar del Set de abiertas
+        if (!l.classList.contains('lista-categoria-oculta')) {
+            categoriasAbiertas.add(listaId);
+        } else {
+            categoriasAbiertas.delete(listaId);
+        }
+    }
+    if(c) {
+        c.style.transform = l.classList.contains('lista-categoria-oculta') ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+};
+
+// --- GESTIÓN DE CARTA ---
+function escucharCarta() {
+    onSnapshot(collection(db, "platos"), (snap) => {
+        const list = document.getElementById('inv-list'); 
+        if (!list) return;
+
+        const cats = { 
+            diario: { titulo: "Menú del Día", platos: [] }, 
+            desayuno: { titulo: "Desayunos", platos: [] }, 
+            especial: { titulo: "Especiales", platos: [] }, 
+            asado: { titulo: "Asados", platos: [] }, 
+            rapida: { titulo: "Comida Rápida", platos: [] }, 
+            bebida: { titulo: "Bebidas", platos: [] }, 
+            otros: { titulo: "Otros", platos: [] } 
+        };
+
+        snap.forEach(d => {
+            const it = d.data(); it.id = d.id; 
+            menuGlobal[it.nombre] = it.ingredientes || [];
+            if (cats[it.categoria]) cats[it.categoria].platos.push(it); 
+            else cats['otros'].platos.push(it);
+        });
+
+        let h = '';
+        for (const k in cats) {
+            if (cats[k].platos.length === 0) continue;
+            const catId = `cat-${k}`;
+            const chevId = `chev-${k}`;
+
+            let ph = cats[k].platos.map(it => `
+                <div style="background:white; padding:15px; margin-bottom:10px; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;">
+                        <strong style="display:block; color:var(--sidebar);">${it.nombre}</strong> 
+                        <span style="color:var(--success); font-weight:500; font-size:0.9rem;">$${Number(it.precio).toLocaleString()}</span>
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <button onclick="editarPlato('${it.id}', '${encodeURIComponent(it.nombre)}', '${it.precio}', '${it.categoria}', '${encodeURIComponent(it.descripcion || '')}', '${(it.ingredientes || []).join(', ')}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
+                        <button onclick="eliminarPlatoModal('${it.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
+                    </div>
+                </div>
+            `).join('');
+
+            h += `
+                <div class="categoria-wrapper" style="margin-bottom:12px;">
+                    <div class="categoria-header" onclick="toggleCategoria('${catId}', '${chevId}')">
+                        <div style="display:flex; align-items:center;">
+                            <h4 style="margin:0;">${cats[k].titulo}</h4>
+                            <span class="count-badge">${cats[k].platos.length}</span>
+                        </div>
+                        <svg id="${chevId}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s; color: var(--text-muted);">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div id="${catId}" class="lista-categoria-oculta lista-categoria">
+                        ${ph}
+                    </div>
+                </div>
+            `;
+        }
+        list.innerHTML = h;
+
+        // --- RESTAURAR ESTADO DE ACORDEONES ---
+        categoriasAbiertas.forEach(id => {
+            const el = document.getElementById(id);
+            const chev = document.getElementById(id.replace('cat-', 'chev-'));
+            if (el) {
+                el.classList.remove('lista-categoria-oculta');
+                if (chev) chev.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
+}
 
 // --- GESTIÓN DE PEDIDOS ---
 function escucharPedidos() {
@@ -64,68 +160,6 @@ function escucharPedidos() {
     });
 }
 
-// --- GESTIÓN DE CARTA (ACORDEONES) ---
-function escucharCarta() {
-    onSnapshot(collection(db, "platos"), (snap) => {
-        const list = document.getElementById('inv-list'); 
-        if (!list) return;
-
-        const cats = { 
-            diario: { titulo: "Menú del Día", platos: [] }, 
-            desayuno: { titulo: "Desayunos", platos: [] }, 
-            especial: { titulo: "Especiales", platos: [] }, 
-            asado: { titulo: "Asados", platos: [] }, 
-            rapida: { titulo: "Comida Rápida", platos: [] }, 
-            bebida: { titulo: "Bebidas", platos: [] }, 
-            otros: { titulo: "Otros", platos: [] } 
-        };
-
-        snap.forEach(d => {
-            const it = d.data(); 
-            it.id = d.id; 
-            menuGlobal[it.nombre] = it.ingredientes || [];
-            if (cats[it.categoria]) cats[it.categoria].platos.push(it); 
-            else cats['otros'].platos.push(it);
-        });
-
-        let h = '';
-        for (const k in cats) {
-            if (cats[k].platos.length === 0) continue;
-
-            let ph = cats[k].platos.map(it => `
-                <div style="background:white; padding:15px; margin-bottom:10px; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                    <div style="flex:1;">
-                        <strong style="display:block; color:var(--sidebar);">${it.nombre}</strong> 
-                        <span style="color:var(--success); font-weight:500; font-size:0.9rem;">$${Number(it.precio).toLocaleString()}</span>
-                    </div>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <button onclick="editarPlato('${it.id}', '${encodeURIComponent(it.nombre)}', '${it.precio}', '${it.categoria}', '${encodeURIComponent(it.descripcion || '')}', '${(it.ingredientes || []).join(', ')}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
-                        <button onclick="eliminarPlatoModal('${it.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
-                    </div>
-                </div>
-            `).join('');
-
-            h += `
-                <div class="categoria-wrapper" style="margin-bottom:12px;">
-                    <div class="categoria-header" onclick="toggleCategoria('cat-${k}', 'chev-${k}')">
-                        <div style="display:flex; align-items:center;">
-                            <h4 style="margin:0;">${cats[k].titulo}</h4>
-                            <span class="count-badge">${cats[k].platos.length}</span>
-                        </div>
-                        <svg id="chev-${k}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s; color: var(--text-muted);">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div id="cat-${k}" class="lista-categoria-oculta lista-categoria">
-                        ${ph}
-                    </div>
-                </div>
-            `;
-        }
-        list.innerHTML = h;
-    });
-}
-
 // --- FORMULARIO Y EDICIÓN ---
 window.editarPlato = (id, n, p, c, d, i) => {
     document.getElementById('edit-id').value = id; 
@@ -136,8 +170,6 @@ window.editarPlato = (id, n, p, c, d, i) => {
     document.getElementById('ingredients').value = i; 
     document.getElementById('f-title').innerText = "Editando Plato"; 
     document.getElementById('btn-cancelar').style.display = 'block';
-    
-    // Scroll al formulario
     document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -168,9 +200,7 @@ document.getElementById('m-form').onsubmit = async (e) => {
 window.actualizarMétricas = function() {
     let tVentas = 0, tMes = 0, pedidosContados = 0, rechazadosContados = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
-    
-    const ventasPlatos = {};
-    const usoIngredientes = {}; 
+    const ventasPlatos = {}, usoIngredientes = {}; 
     const ahora = new Date();
     const filtro = document.getElementById('periodo-selector')?.value || 'hoy';
 
@@ -178,7 +208,6 @@ window.actualizarMétricas = function() {
         if(!p.timestamp) return;
         const f = p.timestamp.toDate();
         let cumpleFiltro = false;
-        
         const esMismoDia = f.getDate() === ahora.getDate() && f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
 
         if (filtro === 'hoy') cumpleFiltro = esMismoDia;
@@ -197,7 +226,6 @@ window.actualizarMétricas = function() {
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
                 if(p.metodoPago === 'banco') tBanco += Number(p.total);
                 if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
-
                 p.items.forEach(item => {
                     ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
                     const ingBase = menuGlobal[item.nombre] || [];
