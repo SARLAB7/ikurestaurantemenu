@@ -15,6 +15,7 @@ body { background: var(--bg); color: var(--text-main); overflow: hidden; height:
 
 #admin-panel { display: flex; width: 100vw; height: 100vh; }
 
+/* Sidebar Escritorio */
 .sidebar { width: 260px; background: var(--sidebar); color: #9ca3af; display: flex; flex-direction: column; padding: 24px 0; z-index: 100; transition: 0.3s; }
 .sidebar h2 { color: white; text-align: center; margin-bottom: 40px; letter-spacing: 2px; }
 .nav-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
@@ -25,6 +26,7 @@ body { background: var(--bg); color: var(--text-main); overflow: hidden; height:
 .view-section { display: none; }
 .view-section.active { display: block; }
 
+/* Tarjetas de Pedido */
 .pedido-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .pedido-card.pendiente { border-left-color: var(--danger); }
 .pedido-card.preparando { border-left-color: var(--accent); }
@@ -53,16 +55,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
 .mesa-libre { border-color: var(--success); }
 .mesa-ocupada { border-color: var(--accent); background-color: #fffbeb; }
 
-/* Ocultar listas del menú */
 .lista-categoria-oculta { display: none; }
 
-/* Botones de Acción Rápida en Pedidos */
-.btn-estado { width: 100%; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn-preparar { background-color: var(--accent); color: #000; box-shadow: 0 4px 6px -1px rgba(255, 204, 0, 0.3); }
-.btn-preparar:hover { filter: brightness(1.05); transform: translateY(-1px); }
-
-.btn-pago { flex: 1; padding: 10px 4px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: white; transition: 0.2s; }
-.btn-pago:hover { filter: brightness(1.1); transform: translateY(-1px); }
+/* Botones de Acción Rápida */
+.btn-estado { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-preparar { background-color: var(--accent); color: #000; }
+.btn-pago { flex: 1; padding: 12px 4px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: white; }
 .nequi { background-color: #DA0081; }
 .banco { background-color: #0047BA; }
 .efectivo { background-color: var(--success); }
@@ -78,78 +76,76 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
 }
 
 /* =========================================
-   NUEVO: DISEÑO RESPONSIVE (MÓVILES Y TABLETS)
+   DISEÑO RESPONSIVE (BARRA ARRIBA)
    ========================================= */
 @media screen and (max-width: 768px) {
-    #admin-panel {
-        flex-direction: column;
-    }
+    body { overflow: auto; } /* Permitir scroll natural en body para móvil */
+    #admin-panel { flex-direction: column; height: auto; }
 
-    /* Convertimos la barra lateral en una Bottom Navigation Bar */
+    /* Barra de Navegación SUPERIOR en móvil */
     .sidebar {
-        position: fixed;
-        bottom: 0;
+        position: sticky;
+        top: 0;
         left: 0;
         width: 100%;
         height: auto;
         flex-direction: row;
         padding: 0;
-        z-index: 9999;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        overflow-x: auto; /* Por si añades más secciones, permite scroll horizontal */
     }
 
-    .sidebar h2 {
-        display: none; /* Ocultar el título del Sidebar en móvil */
-    }
+    .sidebar h2 { display: none; }
 
     .nav-item {
         flex-direction: column;
-        padding: 10px 4px;
-        font-size: 0.65rem;
+        padding: 12px 10px;
+        font-size: 0.6rem;
         flex: 1;
+        min-width: 70px;
         text-align: center;
         gap: 4px;
+        border-bottom: 3px solid transparent;
     }
 
-    .nav-icon {
-        width: 22px;
-        height: 22px;
-        margin: 0;
+    .nav-item.active {
+        background: rgba(255,255,255,0.1);
+        border-bottom: 3px solid var(--accent);
     }
 
-    /* Ajuste para que el botón de Cerrar Sesión se alinee como un botón más abajo */
+    .nav-icon { width: 20px; height: 20px; }
+
+    /* Ajuste de salida de sesión */
     .sidebar > div:last-child {
         margin-top: 0 !important;
         display: flex;
-        flex: 1;
     }
 
-    /* Ajustamos el contenido para que la barra inferior no lo tape */
+    /* Ajustes del contenido principal */
     .main-content {
-        padding: 16px;
-        padding-bottom: 100px; 
-        height: 100vh;
+        padding: 15px;
+        overflow-y: visible; /* Dejar que el scroll lo maneje el body */
+        height: auto;
     }
 
-    /* Forzamos a que las columnas se apilen al 100% de ancho de pantalla */
-    .view-section > div[style*="display: flex"] > div {
+    /* Apilar columnas al 100% */
+    .view-section > div {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .view-section > div > div {
         min-width: 100% !important;
     }
 
-    /* Ajustes estéticos de tarjeta para pantalla pequeña */
-    .pedido-card {
-        padding: 16px;
+    /* Espaciado de tarjetas en móvil */
+    .mesas-container {
+        grid-template-columns: repeat(2, 1fr); /* 2 mesas por fila en móvil */
+        gap: 12px;
     }
-
-    .btn-pago {
-        padding: 12px 4px;
-        font-size: 0.8rem;
-    }
-
-    /* Ajuste responsivo de la pantalla de Login */
-    #login-screen > div {
-        width: 90% !important;
-        max-width: 400px;
-        padding: 30px 20px !important;
-    }
+    
+    .mesa-card { padding: 15px 10px; }
+    
+    .stat-card { padding: 15px; }
 }
