@@ -128,22 +128,80 @@ function actualizarMétricas() {
 window.actualizarEstado = async (id, est) => await updateDoc(doc(db, "pedidos", id), { estado: est });
 window.cerrarPedido = async (id, met) => await updateDoc(doc(db, "pedidos", id), { estado: 'listo', metodoPago: met });
 
-function escucharCarta() {
-    onSnapshot(collection(db, "platos"), (snap) => {
-        const list = document.getElementById('inv-list');
-        list.innerHTML = '';
-        snap.forEach(d => {
-            const p = d.data(); p.id = d.id;
-            list.innerHTML += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:8px; border:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:0.9rem;"><strong>${p.nombre}</strong><br>$${p.precio.toLocaleString()}</div>
-                <div style="display:flex; gap:12px; align-items:center;">
-                    <label class="switch"><input type="checkbox" ${p.disponible!==false?'checked':''} onchange="toggleDisp('${p.id}', this.checked)"><span class="slider"></span></label>
-                    <button onclick="editarPlato('${p.id}','${p.nombre}',${p.precio},'${p.categoria}','${p.descripcion||''}','${(p.ingredientes||[]).join(',')}')" style="border:none; background:none; color:#3b82f6; cursor:pointer;">Edit</button>
-                </div>
-            </div>`;
+function escucharCarta() // --- COMIENZO DEL CAMBIO EN admin-script.js ---
+
+// Función para abrir y cerrar las categorías
+window.toggleCategory = (categoryId) => {
+    const content = document.getElementById(categoryId);
+    const header = content.previousElementSibling;
+    const chevron = header.querySelector('.chevron');
+    
+    const isHidden = content.style.display === 'none' || content.style.display === '';
+    
+    if (isHidden) {
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        header.classList.add('active-cat');
+    } else {
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+        header.classList.remove('active-cat');
+    }
+};
+
+const escucharCarta = () => {
+    onSnapshot(query(collection(db, "platos"), orderBy("timestamp", "desc")), (snap) => {
+        const container = document.getElementById('lista-menu');
+        container.innerHTML = '';
+
+        // 1. Agrupamos los platos por categoría
+        const grupos = {};
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const cat = d.categoria || 'Sin Categoría';
+            if (!grupos[cat]) grupos[cat] = [];
+            grupos[cat].push({ id: docSnap.id, ...d });
         });
+
+        // 2. Creamos el HTML para cada categoría (Acordeón)
+        for (const [categoria, platos] of Object.entries(grupos)) {
+            const catId = `cat-${categoria.replace(/\s+/g, '-')}`; // ID único sin espacios
+            
+            const section = document.createElement('div');
+            section.className = 'category-accordion';
+            
+            section.innerHTML = `
+                <div class="category-header" onclick="toggleCategory('${catId}')">
+                    <h3>${categoria.toUpperCase()} <span class="count">${platos.length}</span></h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div id="${catId}" class="category-content" style="display: none;">
+                    <div class="admin-grid">
+                        ${platos.map(p => `
+                            <div class="admin-dish-card ${p.disponible === false ? 'not-available' : ''}">
+                                <div class="dish-info">
+                                    <h4>${p.nombre}</h4>
+                                    <p>$${p.precio.toLocaleString()}</p>
+                                </div>
+                                <div class="dish-actions">
+                                    <button onclick="editarPlato('${p.id}', '${p.nombre}', ${p.precio}, '${p.categoria}', '${p.descripcion||''}', '${(p.ingredientes||[]).join(', ')}')" class="btn-edit" title="Editar">
+                                        ✏️
+                                    </button>
+                                    <button onclick="eliminarPlato('${p.id}')" class="btn-delete" title="Eliminar">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            container.appendChild(section);
+        }
     });
-}
+};
+
+// --- FIN DEL CAMBIO EN admin-script.js ---
 
 window.toggleDisp = async (id, disp) => await updateDoc(doc(db, "platos", id), { disponible: disp });
 
