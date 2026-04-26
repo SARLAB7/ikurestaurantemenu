@@ -62,6 +62,69 @@ function escucharPedidos() {
         actualizarMétricas(); renderizarPlanoMesas(pedidosGlobales);
     });
 }
+function escucharCarta() {
+    onSnapshot(collection(db, "platos"), (snap) => {
+        const list = document.getElementById('inv-list'); 
+        if (!list) return;
+
+        // Definición de categorías
+        const cats = { 
+            diario: { titulo: "Menú del Día", platos: [] }, 
+            desayuno: { titulo: "Desayunos", platos: [] }, 
+            especial: { titulo: "Especiales", platos: [] }, 
+            asado: { titulo: "Asados", platos: [] }, 
+            rapida: { titulo: "Comida Rápida", platos: [] }, 
+            bebida: { titulo: "Bebidas", platos: [] }, 
+            otros: { titulo: "Otros", platos: [] } 
+        };
+
+        snap.forEach(d => {
+            const it = d.data(); 
+            it.id = d.id; 
+            menuGlobal[it.nombre] = it.ingredientes || [];
+            if (cats[it.categoria]) cats[it.categoria].platos.push(it); 
+            else cats['otros'].platos.push(it);
+        });
+
+        let h = '';
+        for (const k in cats) {
+            if (cats[k].platos.length === 0) continue;
+
+            // Renderizado de cada plato dentro de la categoría
+            let ph = cats[k].platos.map(it => `
+                <div style="background:white; padding:15px; margin-bottom:10px; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <div style="flex:1;">
+                        <strong style="display:block; color:var(--sidebar);">${it.nombre}</strong> 
+                        <span style="color:var(--success); font-weight:500; font-size:0.9rem;">$${Number(it.precio).toLocaleString()}</span>
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <button onclick="editarPlato('${it.id}', '${it.nombre}', '${it.precio}', '${it.categoria}', '${it.descripcion || ''}', '${(it.ingredientes || []).join(', ')}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
+                        <button onclick="eliminarPlatoModal('${it.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Estructura de Acordeón con las nuevas clases CSS
+            h += `
+                <div class="categoria-wrapper" style="margin-bottom:12px;">
+                    <div class="categoria-header" onclick="toggleCategoria('cat-${k}', 'chev-${k}')">
+                        <div style="display:flex; align-items:center;">
+                            <h4 style="margin:0;">${cats[k].titulo}</h4>
+                            <span class="count-badge">${cats[k].platos.length}</span>
+                        </div>
+                        <svg id="chev-${k}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s; color: var(--text-muted);">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div id="cat-${k}" class="lista-categoria lista-categoria-oculta">
+                        ${ph}
+                    </div>
+                </div>
+            `;
+        }
+        list.innerHTML = h;
+    });
+}
 // Ejemplo de cómo debería renderizarse cada bloque de categoría
 `
 <div class="categoria-wrapper">
