@@ -18,13 +18,8 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
-        
-        // MOSTRAR HERRAMIENTAS MASTER SOLO A TI
         const masterTools = document.getElementById('master-tools');
-        if (masterTools) {
-            masterTools.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
-        }
-
+        if (masterTools) masterTools.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
         escucharCarta(); 
         escucharPedidos(); 
     } else {
@@ -37,7 +32,7 @@ onAuthStateChanged(auth, (u) => {
 let menuGlobal = {};
 let pedidosGlobales = [];
 
-// --- LÓGICA DE PEDIDOS Y MÉTRICAS ---
+// --- LÓGICA DE PEDIDOS ---
 function escucharPedidos() {
     const q = query(collection(db, "pedidos"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
@@ -53,16 +48,18 @@ function escucharPedidos() {
             p.id = docSnap.id;
             pedidosGlobales.push(p);
 
+            if (p.estado === 'rechazado') return; // No mostrar rechazados en el monitor principal
+
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
             
-            // --- ESTA ES LA PARTE QUE FALTABA: GENERAR BOTONES ---
             let botonesAccion = '';
             if (p.estado === 'pendiente') {
                 botonesAccion = `
-                    <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar">
-                        👩‍🍳 Empezar a Preparar
-                    </button>`;
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar" style="flex:3;">👩‍🍳 Preparar</button>
+                        <button onclick="rechazarPedido('${p.id}')" class="btn-action" style="background:#fee2e2; color:#ef4444; flex:1;">🗑️</button>
+                    </div>`;
             } else if (p.estado === 'preparando') {
                 botonesAccion = `
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
@@ -71,10 +68,7 @@ function escucharPedidos() {
                         <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
                     </div>`;
             } else if (p.estado === 'listo') {
-                botonesAccion = `
-                    <button onclick="revertirPedido('${p.id}')" class="btn-action btn-outline" style="width:100%; font-size:0.8rem;">
-                        ⬅️ Revertir a Preparando
-                    </button>`;
+                botonesAccion = `<button onclick="revertirPedido('${p.id}')" class="btn-action btn-outline" style="width:100%; font-size:0.8rem;">⬅️ Revertir</button>`;
             }
 
             card.innerHTML = `
@@ -89,18 +83,12 @@ function escucharPedidos() {
                     ${p.items.map(i => `
                         <div style="font-size:0.95rem; margin-bottom:4px;">
                             • 1x <strong>${i.nombre}</strong> 
-                            ${i.excluidos && i.excluidos.length > 0 ? 
-                                `<div style="color:var(--danger); font-size:0.8rem; margin-left:12px; font-weight:600;">❌ SIN: ${i.excluidos.join(', ')}</div>` 
-                                : ''
-                            }
+                            ${i.excluidos?.length > 0 ? `<div style="color:var(--danger); font-size:0.8rem; margin-left:12px;">❌ SIN: ${i.excluidos.join(', ')}</div>` : ''}
                         </div>
                     `).join('')}
                 </div>
-                <div class="acciones-pedido">
-                    ${botonesAccion}
-                </div>
+                <div class="acciones-pedido">${botonesAccion}</div>
             `;
-            
             if (p.estado === 'listo') la.appendChild(card);
             else lp.appendChild(card);
         });
@@ -108,24 +96,22 @@ function escucharPedidos() {
         renderizarPlanoMesas(pedidosGlobales);
     });
 }
+
 function actualizarMétricas() {
-    let tHoy = 0, tMes = 0, pedidosHoyCount = 0;
+    let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
-    
-    const ventasPlatos = {};
-    const usoIngredientes = {};        
-    const ingredientesRechazados = {}; 
-    
-    const hoy = new Date();
+    const ventasPlatos = {}, usoIngredientes = {}, hoy = new Date();
 
     pedidosGlobales.forEach(p => {
-        if(p.timestamp) {
-            const f = p.timestamp.toDate();
-            const esHoy = f.getDate() === hoy.getDate() && 
-                          f.getMonth() === hoy.getMonth() && 
-                          f.getFullYear() === hoy.getFullYear();
+        if(!p.timestamp) return;
+        const f = p.timestamp.toDate();
+        const esHoy = f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
 
-            if(esHoy) {
+        if(esHoy) {
+            if(p.estado === 'rechazado') {
+                rechazadosHoy++;
+                valorRechazados += Number(p.total);
+            } else {
                 tHoy += Number(p.total);
                 pedidosHoyCount++;
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
@@ -134,55 +120,39 @@ function actualizarMétricas() {
 
                 p.items.forEach(item => {
                     ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
-                    
-                    const ingredientesBase = menuGlobal[item.nombre] || [];
-                    const excluidosPorCliente = item.excluidos || [];
-
-                    ingredientesBase.forEach(ing => {
-                        if (excluidosPorCliente.includes(ing)) {
-                            ingredientesRechazados[ing] = (ingredientesRechazados[ing] || 0) + 1;
-                        } else {
-                            usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
-                        }
-                    });
                 });
             }
-
-            if(f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear()) {
-                tMes += Number(p.total);
-            }
+        }
+        if(f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear() && p.estado !== 'rechazado') {
+            tMes += Number(p.total);
         }
     });
 
-    const ticketPromedio = pedidosHoyCount > 0 ? tHoy / pedidosHoyCount : 0;
-
-    // Actualizar Interfaz
     const setUI = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
     
     setUI('s-hoy', `$${tHoy.toLocaleString()}`);
     setUI('s-mes', `$${tMes.toLocaleString()}`);
     setUI('s-pedidos-total', pedidosHoyCount);
-    setUI('s-ticket-promedio', `$${Math.round(ticketPromedio).toLocaleString()}`);
     setUI('s-nequi', `$${tNequi.toLocaleString()}`);
     setUI('s-bancolombia', `$${tBanco.toLocaleString()}`);
     setUI('s-efectivo', `$${tEfectivo.toLocaleString()}`);
+    
+    // Crear dinámicamente la métrica de rechazados si no existe en el HTML
+    const rankingCont = document.getElementById('rankings-rechazados');
+    if(rankingCont) {
+        rankingCont.innerHTML = `
+            <div style="width:100%; padding:15px; background:#fff1f2; border-radius:10px; border:1px solid #fecaca; text-align:center;">
+                <div style="color:#e11d48; font-size:0.8rem; font-weight:600;">Pedidos Rechazados Hoy</div>
+                <strong style="font-size:1.5rem; color:#be123c;">${rechazadosHoy}</strong>
+                <div style="font-size:0.85rem; color:#be123c; margin-top:5px;">Pérdida: $${valorRechazados.toLocaleString()}</div>
+            </div>
+        `;
+    }
 
     if(document.getElementById('rankings-categoria')) {
         document.getElementById('rankings-categoria').innerHTML = Object.entries(ventasPlatos)
             .sort((a,b) => b[1] - a[1]).slice(0,5)
             .map(([n,v]) => `<div style="padding:10px; background:#f9fafb; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between;"><span>${n}</span> <strong>${v}</strong></div>`).join('') || "Sin ventas hoy";
-    }
-
-    if(document.getElementById('rankings-ingredientes')) {
-        document.getElementById('rankings-ingredientes').innerHTML = Object.entries(usoIngredientes)
-            .sort((a,b) => b[1] - a[1])
-            .map(([n,v]) => `<span style="background:var(--success); color:white; padding:4px 10px; border-radius:20px; font-size:0.75rem;">${n} (${v})</span>`).join('') || "Sin datos";
-    }
-
-    if(document.getElementById('rankings-rechazados')) {
-        document.getElementById('rankings-rechazados').innerHTML = Object.entries(ingredientesRechazados)
-            .sort((a,b) => b[1] - a[1])
-            .map(([n,v]) => `<span style="background:var(--danger); color:white; padding:4px 10px; border-radius:20px; font-size:0.75rem;">${n} (${v})</span>`).join('') || "Sin rechazos";
     }
 }
 
@@ -190,177 +160,80 @@ function actualizarMétricas() {
 window.actualizarEstado = async (id, estado) => await updateDoc(doc(db, "pedidos", id), { estado });
 window.cerrarPedido = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { estado: 'listo', metodoPago: metodoPago });
 window.revertirPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: 'preparando', metodoPago: null });
-window.cambiarPago = async (id, nuevoMetodo) => await updateDoc(doc(db, "pedidos", id), { metodoPago: nuevoMetodo });
+window.rechazarPedido = async (id) => {
+    if(confirm("¿Seguro que deseas rechazar/eliminar este pedido?")) {
+        await updateDoc(doc(db, "pedidos", id), { estado: 'rechazado' });
+    }
+};
 window.toggleDisponibilidad = async (id, disp) => await updateDoc(doc(db, "platos", id), { disponible: disp });
 
-// --- LÓGICA DE CARTA ---
+// --- GESTIÓN DE CARTA ---
 function escucharCarta() {
     onSnapshot(collection(db, "platos"), (snap) => {
         const list = document.getElementById('inv-list');
         if (!list) return;
-
-        const categorias = {
-            diario: { titulo: "Menú del Día", platos: [] },
-            desayuno: { titulo: "Desayunos", platos: [] },
-            especial: { titulo: "Especiales", platos: [] },
-            asado: { titulo: "Asados", platos: [] },
-            rapida: { titulo: "Comida Rápida", platos: [] },
-            bebida: { titulo: "Bebidas", platos: [] },
-            otros: { titulo: "Otros", platos: [] }
-        };
-
+        const categorias = { diario: { titulo: "Menú del Día", platos: [] }, desayuno: { titulo: "Desayunos", platos: [] }, especial: { titulo: "Especiales", platos: [] }, asado: { titulo: "Asados", platos: [] }, rapida: { titulo: "Comida Rápida", platos: [] }, bebida: { titulo: "Bebidas", platos: [] }, otros: { titulo: "Otros", platos: [] } };
         snap.forEach(d => {
-            const item = d.data();
-            item.id = d.id;
+            const item = d.data(); item.id = d.id;
             menuGlobal[item.nombre] = item.ingredientes || [];
-
-            if (categorias[item.categoria]) {
-                categorias[item.categoria].platos.push(item);
-            } else {
-                categorias['otros'].platos.push(item);
-            }
+            if (categorias[item.categoria]) categorias[item.categoria].platos.push(item);
+            else categorias['otros'].platos.push(item);
         });
-
-        actualizarMétricas();
-
         let htmlFinal = '';
         for (const key in categorias) {
-            const cat = categorias[key];
-            if (cat.platos.length === 0) continue;
-
-            let platosHtml = '';
-            cat.platos.forEach(item => {
-                const ingTexto = (item.ingredientes || []).join(', ');
-                platosHtml += `
+            const cat = categorias[key]; if (cat.platos.length === 0) continue;
+            let platosHtml = cat.platos.map(item => `
                 <div style="background:white; padding:15px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="flex:1;">
-                        <strong style="font-size:1.05rem;">${item.nombre}</strong> <span style="color:var(--text-muted); font-size:0.95rem;">- $${Number(item.precio).toLocaleString()}</span><br>
-                        ${item.descripcion ? `<span style="font-size:0.85rem; color:#6b7280; display:block; margin-top:4px;">${item.descripcion}</span>` : ''}
-                    </div>
+                    <div style="flex:1;"><strong style="font-size:1.05rem;">${item.nombre}</strong> <span style="color:var(--text-muted); font-size:0.95rem;">- $${Number(item.precio).toLocaleString()}</span></div>
                     <div style="display:flex; gap:16px; align-items:center;">
-                        <label class="switch">
-                            <input type="checkbox" ${item.disponible !== false ? 'checked' : ''} onchange="toggleDisponibilidad('${item.id}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                        <button onclick="editarPlato('${item.id}', '${item.nombre}', '${item.precio}', '${item.categoria}', '${item.descripcion || ''}', '${ingTexto}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
+                        <label class="switch"><input type="checkbox" ${item.disponible !== false ? 'checked' : ''} onchange="toggleDisponibilidad('${item.id}', this.checked)"><span class="slider"></span></label>
+                        <button onclick="editarPlato('${item.id}', '${item.nombre}', '${item.precio}', '${item.categoria}', '${item.descripcion || ''}', '${(item.ingredientes || []).join(', ')}')" style="color:#3b82f6; border:none; background:none; cursor:pointer;">${ICON_EDIT}</button>
                         <button onclick="eliminarPlatoModal('${item.id}')" style="color:var(--danger); border:none; background:none; cursor:pointer;">${ICON_TRASH}</button>
                     </div>
-                </div>`;
-            });
-
-            htmlFinal += `
-            <div class="admin-group" style="margin-bottom: 15px;">
-                <div class="admin-group-header" onclick="toggleCategoria('cat-${key}', 'chev-${key}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border);">
-                    <strong style="color: var(--sidebar); font-size: 1rem;">${cat.titulo} (${cat.platos.length})</strong>
-                    <svg id="chev-${key}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>
-                </div>
-                <div id="cat-${key}" class="lista-categoria-oculta" style="margin-top: 12px; padding: 0 4px;">
-                    ${platosHtml}
-                </div>
-            </div>`;
+                </div>`).join('');
+            htmlFinal += `<div class="admin-group"><div class="admin-group-header" onclick="toggleCategoria('cat-${key}', 'chev-${key}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border);"><strong>${cat.titulo} (${cat.platos.length})</strong><svg id="chev-${key}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div id="cat-${key}" class="lista-categoria-oculta">${platosHtml}</div></div>`;
         }
         list.innerHTML = htmlFinal;
     });
 }
 
-// --- MODALES Y ACCIONES ---
+// --- MODALES Y ELIMINACIÓN ---
 let idParaEliminar = null;
-
-window.eliminarPlatoModal = (id) => {
-    idParaEliminar = id;
-    document.getElementById('modal-title').innerText = '¿Borrar este plato?';
-    document.getElementById('delete-modal').style.display = 'flex';
-};
-
-window.confirmarReinicioTotal = () => {
-    if (auth.currentUser.email !== CORREO_MASTER) return;
-    idParaEliminar = "REINICIO_TOTAL"; 
-    document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`;
-    document.getElementById('delete-modal').style.display = 'flex';
-};
-
+window.eliminarPlatoModal = (id) => { idParaEliminar = id; document.getElementById('modal-title').innerText = '¿Borrar este plato?'; document.getElementById('delete-modal').style.display = 'flex'; };
+window.confirmarReinicioTotal = () => { if (auth.currentUser.email !== CORREO_MASTER) return; idParaEliminar = "REINICIO_TOTAL"; document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`; document.getElementById('delete-modal').style.display = 'flex'; };
 const btnConfirmarEliminar = document.getElementById('confirm-delete-btn');
 if (btnConfirmarEliminar) {
     btnConfirmarEliminar.onclick = async () => {
         if (idParaEliminar === "REINICIO_TOTAL") {
-            try {
-                const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
-                await Promise.all(promesas);
-                alert("Métricas reiniciadas con éxito.");
-            } catch (e) {
-                console.error("Error al reiniciar:", e);
-            }
-        } else if (idParaEliminar) {
-            await deleteDoc(doc(db, "platos", idParaEliminar));
-        }
-        idParaEliminar = null;
-        document.getElementById('delete-modal').style.display = 'none';
+            const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
+            await Promise.all(promesas);
+            alert("Métricas reiniciadas.");
+        } else if (idParaEliminar) await deleteDoc(doc(db, "platos", idParaEliminar));
+        idParaEliminar = null; document.getElementById('delete-modal').style.display = 'none';
     };
 }
 
-// --- EDICIÓN Y OTROS ---
+// --- FORMULARIO CARTA ---
 window.editarPlato = (id, nombre, precio, cat, desc, ing) => {
-    document.getElementById('edit-id').value = id;
-    document.getElementById('name').value = nombre;
-    document.getElementById('price').value = precio;
-    document.getElementById('category').value = cat;
-    document.getElementById('desc').value = desc;
-    document.getElementById('ingredients').value = ing;
-    document.getElementById('f-title').innerText = "Editando Plato";
-    document.getElementById('btn-cancelar').style.display = 'block';
+    document.getElementById('edit-id').value = id; document.getElementById('name').value = nombre; document.getElementById('price').value = precio; document.getElementById('category').value = cat; document.getElementById('desc').value = desc; document.getElementById('ingredients').value = ing; document.getElementById('f-title').innerText = "Editando Plato"; document.getElementById('btn-cancelar').style.display = 'block';
 };
-
-window.cancelarEdicion = () => {
-    document.getElementById('m-form').reset();
-    document.getElementById('edit-id').value = '';
-    document.getElementById('f-title').innerText = "Configurar Plato";
-    document.getElementById('btn-cancelar').style.display = 'none';
-};
-
+window.cancelarEdicion = () => { document.getElementById('m-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('f-title').innerText = "Configurar Plato"; document.getElementById('btn-cancelar').style.display = 'none'; };
 document.getElementById('m-form').onsubmit = async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('edit-id').value;
-    const datos = {
-        nombre: document.getElementById('name').value,
-        precio: Number(document.getElementById('price').value),
-        categoria: document.getElementById('category').value,
-        descripcion: document.getElementById('desc').value,
-        ingredientes: document.getElementById('ingredients').value.split(',').map(s => s.trim()).filter(s => s !== ''),
-        timestamp: serverTimestamp()
-    };
+    e.preventDefault(); const id = document.getElementById('edit-id').value;
+    const datos = { nombre: document.getElementById('name').value, precio: Number(document.getElementById('price').value), categoria: document.getElementById('category').value, descripcion: document.getElementById('desc').value, ingredientes: document.getElementById('ingredients').value.split(',').map(s => s.trim()).filter(s => s !== ''), timestamp: serverTimestamp() };
     if(!id) datos.disponible = true;
-    
     id ? await updateDoc(doc(db, "platos", id), datos) : await addDoc(collection(db, "platos"), datos);
     window.cancelarEdicion();
 };
 
 // --- PLANO DE MESAS ---
 window.renderizarPlanoMesas = function(pedidos) {
-    const grid = document.getElementById('grid-mesas');
-    if (!grid) return;
-    const mesasActivas = pedidos.filter(p => p.estado !== 'listo' && p.cliente.toLowerCase().includes('mesa'));
-    
+    const grid = document.getElementById('grid-mesas'); if (!grid) return;
+    const mesasActivas = pedidos.filter(p => p.estado !== 'listo' && p.estado !== 'rechazado' && p.cliente.toLowerCase().includes('mesa'));
     let html = '';
     for(let i = 1; i <= 12; i++) {
-        const nombreMesa = `Mesa ${i}`;
-        const pMesa = mesasActivas.find(p => p.cliente.toLowerCase() === nombreMesa.toLowerCase());
-        
-        if(pMesa) {
-            html += `
-            <div class="mesa-card mesa-ocupada">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px; color: #d97706;"><path d="M17 11h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2"/><path d="M9 11V6a3 3 0 0 1 6 0v5"/><path d="M12 11v6"/></svg>
-                <h3 style="margin-bottom:4px; font-weight:600;">${nombreMesa}</h3>
-                <span style="font-size:0.75rem; background:var(--accent); color:#000; padding:2px 6px; border-radius:4px;">OCUPADA</span>
-                <div style="font-size:0.9rem; margin-top:8px; font-weight:600;">$${Number(pMesa.total).toLocaleString()}</div>
-            </div>`;
-        } else {
-            html += `
-            <div class="mesa-card mesa-libre">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px; color: var(--success); opacity: 0.5;"><rect x="3" y="8" width="18" height="4" rx="1"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="19" y1="12" x2="19" y2="21"/><line x1="5" y1="12" x2="5" y2="21"/></svg>
-                <h3 style="margin-bottom:4px; font-weight:600;">${nombreMesa}</h3>
-                <span style="font-size:0.8rem; color:var(--success);">Disponible</span>
-            </div>`;
-        }
+        const nombreMesa = `Mesa ${i}`; const pMesa = mesasActivas.find(p => p.cliente.toLowerCase() === nombreMesa.toLowerCase());
+        html += pMesa ? `<div class="mesa-card mesa-ocupada"><h3>${nombreMesa}</h3><span style="font-size:0.75rem; background:var(--accent); padding:2px 6px; border-radius:4px;">OCUPADA</span><div style="margin-top:8px;">$${Number(pMesa.total).toLocaleString()}</div></div>` : `<div class="mesa-card mesa-libre"><h3>${nombreMesa}</h3><span style="color:var(--success);">Disponible</span></div>`;
     }
     grid.innerHTML = html;
 };
@@ -368,24 +241,7 @@ window.renderizarPlanoMesas = function(pedidos) {
 // --- IMPRESIÓN ---
 window.imprimirComanda = function(pJsonStr) {
     const p = JSON.parse(decodeURIComponent(pJsonStr));
-    const fecha = new Date().toLocaleString();
-    let ticketHTML = `
-        <div id="ticket-impresion">
-            <h2 style="text-align:center; margin-bottom:5px;">IKU RESTAURANTE</h2>
-            <hr style="border-top:1px dashed #000; margin:10px 0;">
-            <p><strong>Cliente:</strong> ${p.cliente}</p>
-            <p><strong>Fecha:</strong> ${fecha}</p>
-            <hr style="border-top:1px dashed #000; margin:10px 0;">
-            <ul style="list-style:none; padding:0;">
-                ${p.items.map(i => `<li style="margin-bottom:8px;"><strong>1x ${i.nombre}</strong> ${i.excluidos && i.excluidos.length > 0 ? `<br><small>- Sin: ${i.excluidos.join(', ')}</small>` : ''}</li>`).join('')}
-            </ul>
-            <hr style="border-top:1px dashed #000; margin:10px 0;">
-            <h3 style="text-align:right;">Total: $${Number(p.total).toLocaleString()}</h3>
-        </div>
-    `;
     const div = document.createElement('div');
-    div.innerHTML = ticketHTML;
-    document.body.appendChild(div);
-    window.print();
-    document.body.removeChild(div);
+    div.innerHTML = `<div id="ticket-impresion"><h2 style="text-align:center;">IKU</h2><hr><p><strong>Cliente:</strong> ${p.cliente}</p><p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p><hr><ul style="list-style:none; padding:0;">${p.items.map(i => `<li><strong>1x ${i.nombre}</strong> ${i.excluidos?.length > 0 ? `<br><small>- Sin: ${i.excluidos.join(', ')}</small>` : ''}</li>`).join('')}</ul><hr><h3 style="text-align:right;">Total: $${Number(p.total).toLocaleString()}</h3></div>`;
+    document.body.appendChild(div); window.print(); document.body.removeChild(div);
 };
