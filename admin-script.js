@@ -67,40 +67,114 @@ function escucharPedidos() {
 function actualizarMétricas() {
     let tVentas = 0, tMes = 0, pedidosContados = 0, rechazadosContados = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
-    const ventasPlatos = {}, usoIngredientes = {}, ahora = new Date();
+    
+    const ventasPlatos = {};
+    const usoIngredientes = {}; 
+    const ahora = new Date();
+    
+    // CAPTURAR EL VALOR DEL SELECTOR
     const filtro = document.getElementById('periodo-selector')?.value || 'hoy';
 
     pedidosGlobales.forEach(p => {
         if(!p.timestamp) return;
         const f = p.timestamp.toDate();
+        
+        // Lógica de comparación de fechas
         let cumpleFiltro = false;
         
+        const esMismoDia = f.getDate() === ahora.getDate() && 
+                           f.getMonth() === ahora.getMonth() && 
+                           f.getFullYear() === ahora.getFullYear();
+
         if (filtro === 'hoy') {
-            cumpleFiltro = f.getDate() === ahora.getDate() && f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+            cumpleFiltro = esMismoDia;
         } else if (filtro === 'semana') {
-            const haceUnaSemana = new Date(); haceUnaSemana.setDate(ahora.getDate() - 7);
+            const haceUnaSemana = new Date();
+            haceUnaSemana.setDate(ahora.getDate() - 7);
             cumpleFiltro = f >= haceUnaSemana;
         } else if (filtro === 'mes') {
             cumpleFiltro = f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
-        } else { cumpleFiltro = true; }
+        } else if (filtro === 'total') {
+            cumpleFiltro = true;
+        }
 
         if(cumpleFiltro) {
             if(p.estado === 'rechazado') {
-                rechazadosContados++; valorRechazados += Number(p.total);
+                rechazadosContados++;
+                valorRechazados += Number(p.total);
             } else {
-                tVentas += Number(p.total); pedidosContados++;
+                tVentas += Number(p.total);
+                pedidosContados++;
+                
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
                 if(p.metodoPago === 'banco') tBanco += Number(p.total);
                 if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
 
+                // Top Platos e Ingredientes
                 p.items.forEach(item => {
                     ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
                     const ingBase = menuGlobal[item.nombre] || [];
                     const excluidos = item.excluidos || [];
-                    ingBase.forEach(ing => { if (!excluidos.includes(ing)) usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1; });
+                    ingBase.forEach(ing => {
+                        if (!excluidos.includes(ing)) {
+                            usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
+                        }
+                    });
                 });
             }
         }
+        // El acumulado del mes siempre se calcula para la tarjeta fija si lo deseas
+        if(f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear() && p.estado !== 'rechazado') {
+            tMes += Number(p.total);
+        }
+    });
+
+    // RENDERIZADO (IDs del HTML)
+    const setUI = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
+    
+    setUI('s-hoy', `$${tVentas.toLocaleString()}`);
+    setUI('s-pedidos-total', pedidosContados);
+    setUI('s-mes', `$${tMes.toLocaleString()}`);
+    setUI('s-nequi', `$${tNequi.toLocaleString()}`);
+    setUI('s-bancolombia', `$${tBanco.toLocaleString()}`);
+    setUI('s-efectivo', `$${tEfectivo.toLocaleString()}`);
+
+    // Refrescar rankings
+    renderizarRankings(ventasPlatos, usoIngredientes, valorRechazados, rechazadosContados);
+}
+
+// Función auxiliar para limpiar el código de arriba
+function renderizarRankings(ventasPlatos, usoIngredientes, valorRechazados, rechazadosContados) {
+    const rPlatos = document.getElementById('rankings-categoria');
+    if(rPlatos) {
+        const sorted = Object.entries(ventasPlatos).sort((a,b) => b[1] - a[1]).slice(0,5);
+        rPlatos.innerHTML = sorted.map(([n,v]) => `
+            <div style="padding:10px; background:#f9fafb; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between;">
+                <span>${n}</span> <strong>${v}</strong>
+            </div>`).join('') || "Sin datos";
+    }
+
+    const rIng = document.getElementById('rankings-ingredientes');
+    if(rIng) {
+        const sortedIng = Object.entries(usoIngredientes).sort((a,b) => b[1] - a[1]);
+        rIng.innerHTML = sortedIng.map(([n,v]) => `
+            <span style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; padding:4px 10px; border-radius:20px; font-size:0.75rem;">${n} (${v})</span>
+        `).join('') || "Sin datos";
+    }
+
+    const rRechazados = document.getElementById('rankings-rechazados');
+    if(rRechazados) {
+        rRechazados.innerHTML = `
+            <div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;">
+                <div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div>
+                <div style="text-align:left;">
+                    <div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase;">Pérdidas Periodo</div>
+                    <strong style="font-size:1.4rem;">$${valorRechazados.toLocaleString()}</strong>
+                    <div style="font-size:0.8rem; color:#be123c;">${rechazadosContados} pedidos cancelados</div>
+                </div>
+            </div>`;
+    }
+}
         // Acumulado del mes para la tarjeta fija
         if(f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear() && p.estado !== 'rechazado') tMes += Number(p.total);
     });
