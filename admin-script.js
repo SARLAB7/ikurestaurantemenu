@@ -65,47 +65,58 @@ function escucharPedidos() {
 }
 
 function actualizarMétricas() {
-    let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0;
+    let tHoy = 0, tMes = 0, pedidosContados = 0, rechazadosContados = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
     
     const ventasPlatos = {};
     const usoIngredientes = {}; 
-    const hoy = new Date();
+    const ahora = new Date();
+    const filtro = document.getElementById('periodo-selector')?.value || 'hoy';
 
     pedidosGlobales.forEach(p => {
         if(!p.timestamp) return;
         const f = p.timestamp.toDate();
-        const esHoy = f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+        
+        // --- LÓGICA DE FILTRADO DINÁMICO ---
+        let cumpleFiltro = false;
+        
+        if (filtro === 'hoy') {
+            cumpleFiltro = f.getDate() === ahora.getDate() && f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+        } else if (filtro === 'semana') {
+            const haceUnaSemana = new Date();
+            haceUnaSemana.setDate(ahora.getDate() - 7);
+            cumpleFiltro = f >= haceUnaSemana;
+        } else if (filtro === 'mes') {
+            cumpleFiltro = f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+        } else {
+            cumpleFiltro = true; // 'total'
+        }
 
-        if(esHoy) {
+        if(cumpleFiltro) {
             if(p.estado === 'rechazado') {
-                rechazadosHoy++;
+                rechazadosContados++;
                 valorRechazados += Number(p.total);
             } else {
                 tHoy += Number(p.total);
-                pedidosHoyCount++;
+                pedidosContados++;
                 
-                // Contar dinero por método
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
                 if(p.metodoPago === 'banco') tBanco += Number(p.total);
                 if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
 
-                // Lógica para Top Platos e Ingredientes
                 p.items.forEach(item => {
-                    // 1. Contar el plato en el ranking
                     ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
-
-                    // 2. Buscar qué ingredientes usa este plato (desde menuGlobal)
                     const ingredientesBase = menuGlobal[item.nombre] || [];
-                    const excluidosPorCliente = item.excluidos || [];
-
+                    const excluidos = item.excluidos || [];
                     ingredientesBase.forEach(ing => {
-                        // Solo contamos el ingrediente si el cliente NO lo pidió quitar
-                        if (!excluidosPorCliente.includes(ing)) {
+                        if (!excluidos.includes(ing)) {
                             usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
                         }
                     });
                 });
+            }
+        }
+    });
             }
         }
         
