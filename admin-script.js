@@ -374,3 +374,36 @@ window.imprimirComanda = function(pJsonStr) {
     window.print();
     document.body.removeChild(div);
 };
+// --- FUNCIÓN EXCLUSIVA MASTER ---
+window.confirmarReinicioTotal = () => {
+    if (auth.currentUser.email !== CORREO_MASTER) return;
+    
+    // Reutilizamos tu modal de borrado
+    idParaEliminar = "REINICIO_TOTAL"; 
+    document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`;
+    document.getElementById('delete-modal').style.display = 'flex';
+};
+
+// Modifica el evento del botón confirmar del modal que ya tenías:
+const btnConfirmarEliminar = document.getElementById('confirm-delete-btn');
+if (btnConfirmarEliminar) {
+    btnConfirmarEliminar.onclick = async () => {
+        if (idParaEliminar === "REINICIO_TOTAL") {
+            // Borrado masivo (loop sobre los pedidos actuales)
+            try {
+                const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
+                await Promise.all(promesas);
+                alert("Métricas reiniciadas con éxito.");
+            } catch (e) {
+                console.error("Error al reiniciar:", e);
+            }
+            document.getElementById('delete-modal').style.display = 'none';
+            idParaEliminar = null;
+        } else if (idParaEliminar) {
+            // Lógica normal para un solo plato
+            await deleteDoc(doc(db, "platos", idParaEliminar));
+            idParaEliminar = null;
+            document.getElementById('delete-modal').style.display = 'none';
+        }
+    };
+}
