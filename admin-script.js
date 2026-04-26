@@ -18,8 +18,8 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
+        escucharCarta(); 
         escucharPedidos(); 
-        escucharCarta();
     } else {
         if(u) signOut(auth);
         document.getElementById('admin-panel').style.display = 'none';
@@ -27,46 +27,22 @@ onAuthStateChanged(auth, (u) => {
     }
 });
 
-// --- LÓGICA DE PEDIDOS, MÉTRICAS E IMPRESIÓN ---
+let menuGlobal = {};
+let pedidosGlobales = [];
+
+// --- LÓGICA DE PEDIDOS Y MÉTRICAS ---
 function escucharPedidos() {
     const q = query(collection(db, "pedidos"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
-        const pedidos = [];
+        pedidosGlobales = [];
         const lp = document.getElementById('l-pendientes');
         const la = document.getElementById('l-atendidos');
         lp.innerHTML = ''; la.innerHTML = '';
         
-        let tHoy = 0, tMes = 0;
-        let tNequi = 0, tBanco = 0, tEfectivo = 0;
-        const ventasPlatos = {};
-        const usoIngredientes = {};
-
-        const hoy = new Date();
-        
         snapshot.docs.forEach(docSnap => {
             const p = docSnap.data();
             p.id = docSnap.id;
-            pedidos.push(p);
-
-            if(p.timestamp) {
-                const f = p.timestamp.toDate();
-                if(f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth()) {
-                    tHoy += Number(p.total);
-                    if(p.metodoPago === 'nequi') tNequi += Number(p.total);
-                    if(p.metodoPago === 'banco') tBanco += Number(p.total);
-                    if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
-                }
-                if(f.getMonth() === hoy.getMonth()) tMes += Number(p.total);
-            }
-
-            p.items.forEach(item => {
-                ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
-                if(item.ingredientes) {
-                    item.ingredientes.forEach(ing => {
-                        usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
-                    });
-                }
-            });
+            pedidosGlobales.push(p);
 
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
@@ -81,18 +57,38 @@ function escucharPedidos() {
                 <div style="margin-bottom:15px; padding-left: 10px; border-left: 2px solid var(--border);">
                     ${p.items.map(i => `<div style="font-size:0.9rem; margin-bottom:4px;">• 1x ${i.nombre} ${i.nota ? `<span style="color:#eab308; font-size:0.8rem;">(${i.nota})</span>` : ''}</div>`).join('')}
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <select onchange="actualizarEstado('${p.id}', this.value)" style="flex:1; margin:0; padding:8px; border-radius:6px;">
-                        <option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                        <option value="preparando" ${p.estado === 'preparando' ? 'selected' : ''}>🍳 Preparando</option>
-                        <option value="listo" ${p.estado === 'listo' ? 'selected' : ''}>✅ Entregado</option>
-                    </select>
-                    <select onchange="actualizarPago('${p.id}', this.value)" style="flex:1; margin:0; padding:8px; border-radius:6px;">
-                        <option value="" disabled ${!p.metodoPago ? 'selected' : ''}>Pago...</option>
-                        <option value="nequi" ${p.metodoPago === 'nequi' ? 'selected' : ''}>Nequi</option>
-                        <option value="banco" ${p.metodoPago === 'banco' ? 'selected' : ''}>Banco</option>
-                        <option value="efectivo" ${p.metodoPago === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                    </select>
+                
+                <div class="acciones-pedido" style="margin-top:10px;">
+                    ${p.estado === 'pendiente' ? 
+                        `<button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar">
+                            🍳 Iniciar Preparación
+                        </button>` : ''
+                    }
+                    
+                    ${p.estado === 'preparando' ? 
+                        `<div style="width: 100%;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; text-align: center;">Completar y cobrar con:</div>
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi">Nequi</button>
+                                <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco">Banco</button>
+                                <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
+                            </div>
+                        </div>` : ''
+                    }
+
+                    ${p.estado === 'listo' ? 
+                        `<div style="display:flex; justify-content:space-between; align-items:center; background: #f0fdf4; padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--success);">
+                            <div style="display:flex; align-items:center; gap: 8px;">
+                                <span style="font-size: 1rem;">✅</span>
+                                <select onchange="cambiarPago('${p.id}', this.value)" style="margin: 0; padding: 4px 8px; font-size: 0.85rem; font-weight: 600; color: var(--success); border: 1px solid #bbf7d0; border-radius: 6px; background: white; cursor: pointer;">
+                                    <option value="nequi" ${p.metodoPago === 'nequi' ? 'selected' : ''}>Nequi</option>
+                                    <option value="banco" ${p.metodoPago === 'banco' ? 'selected' : ''}>Banco</option>
+                                    <option value="efectivo" ${p.metodoPago === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                                </select>
+                            </div>
+                            <button onclick="revertirPedido('${p.id}')" style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer; text-decoration:underline;">Revertir a Preparando</button>
+                        </div>` : ''
+                    }
                 </div>
             `;
 
@@ -100,29 +96,63 @@ function escucharPedidos() {
             else lp.appendChild(card);
         });
 
-        if(document.getElementById('s-hoy')) document.getElementById('s-hoy').innerText = `$${tHoy.toLocaleString()}`;
-        if(document.getElementById('s-mes')) document.getElementById('s-mes').innerText = `$${tMes.toLocaleString()}`;
-        if(document.getElementById('s-nequi')) document.getElementById('s-nequi').innerText = `$${tNequi.toLocaleString()}`;
-        if(document.getElementById('s-bancolombia')) document.getElementById('s-bancolombia').innerText = `$${tBanco.toLocaleString()}`;
-        if(document.getElementById('s-efectivo')) document.getElementById('s-efectivo').innerText = `$${tEfectivo.toLocaleString()}`;
-
-        if(document.getElementById('rankings-categoria')) {
-            document.getElementById('rankings-categoria').innerHTML = Object.entries(ventasPlatos)
-                .sort((a,b) => b[1] - a[1]).slice(0,5)
-                .map(([n,v]) => `<div style="padding:10px; background:#f9fafb; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between;"><span>${n}</span> <strong>${v}</strong></div>`).join('');
-        }
-        if(document.getElementById('rankings-ingredientes')) {
-            document.getElementById('rankings-ingredientes').innerHTML = Object.entries(usoIngredientes)
-                .sort((a,b) => b[1] - a[1])
-                .map(([n,v]) => `<span style="background:var(--sidebar); color:white; padding:4px 10px; border-radius:20px; font-size:0.8rem;">${n} (${v})</span>`).join('');
-        }
-
-        renderizarPlanoMesas(pedidos);
+        actualizarMétricas();
+        renderizarPlanoMesas(pedidosGlobales);
     });
 }
 
+function actualizarMétricas() {
+    let tHoy = 0, tMes = 0;
+    let tNequi = 0, tBanco = 0, tEfectivo = 0;
+    const ventasPlatos = {};
+    const usoIngredientes = {};
+    const hoy = new Date();
+
+    pedidosGlobales.forEach(p => {
+        if(p.timestamp) {
+            const f = p.timestamp.toDate();
+            if(f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth()) {
+                tHoy += Number(p.total);
+                if(p.metodoPago === 'nequi') tNequi += Number(p.total);
+                if(p.metodoPago === 'banco') tBanco += Number(p.total);
+                if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
+            }
+            if(f.getMonth() === hoy.getMonth()) tMes += Number(p.total);
+        }
+
+        p.items.forEach(item => {
+            ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
+            
+            const ingrs = menuGlobal[item.nombre] || [];
+            ingrs.forEach(ing => {
+                usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
+            });
+        });
+    });
+
+    if(document.getElementById('s-hoy')) document.getElementById('s-hoy').innerText = `$${tHoy.toLocaleString()}`;
+    if(document.getElementById('s-mes')) document.getElementById('s-mes').innerText = `$${tMes.toLocaleString()}`;
+    if(document.getElementById('s-nequi')) document.getElementById('s-nequi').innerText = `$${tNequi.toLocaleString()}`;
+    if(document.getElementById('s-bancolombia')) document.getElementById('s-bancolombia').innerText = `$${tBanco.toLocaleString()}`;
+    if(document.getElementById('s-efectivo')) document.getElementById('s-efectivo').innerText = `$${tEfectivo.toLocaleString()}`;
+
+    if(document.getElementById('rankings-categoria')) {
+        document.getElementById('rankings-categoria').innerHTML = Object.entries(ventasPlatos)
+            .sort((a,b) => b[1] - a[1]).slice(0,5)
+            .map(([n,v]) => `<div style="padding:10px; background:#f9fafb; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between;"><span>${n}</span> <strong>${v}</strong></div>`).join('');
+    }
+    if(document.getElementById('rankings-ingredientes')) {
+        document.getElementById('rankings-ingredientes').innerHTML = Object.entries(usoIngredientes)
+            .sort((a,b) => b[1] - a[1])
+            .map(([n,v]) => `<span style="background:var(--sidebar); color:white; padding:4px 10px; border-radius:20px; font-size:0.8rem;">${n} (${v})</span>`).join('');
+    }
+}
+
+// --- FUNCIONES DE ESTADO ÁGIL ---
 window.actualizarEstado = async (id, estado) => await updateDoc(doc(db, "pedidos", id), { estado });
-window.actualizarPago = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { metodoPago });
+window.cerrarPedido = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { estado: 'listo', metodoPago: metodoPago });
+window.revertirPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: 'preparando', metodoPago: null });
+window.cambiarPago = async (id, nuevoMetodo) => await updateDoc(doc(db, "pedidos", id), { metodoPago: nuevoMetodo });
 window.toggleDisponibilidad = async (id, disp) => await updateDoc(doc(db, "platos", id), { disponible: disp });
 
 // --- LÓGICA DE CARTA AGRUPADA ---
@@ -131,6 +161,8 @@ function escucharCarta() {
         const list = document.getElementById('inv-list');
         list.innerHTML = '';
         
+        menuGlobal = {};
+
         const categorias = {
             diario: { titulo: "Menú del Día", platos: [] },
             rapida: { titulo: "Comidas Rápidas", platos: [] },
@@ -141,12 +173,17 @@ function escucharCarta() {
         snap.forEach(d => {
             const item = d.data();
             item.id = d.id;
+            
+            menuGlobal[item.nombre] = item.ingredientes || [];
+
             if (categorias[item.categoria]) {
                 categorias[item.categoria].platos.push(item);
             } else {
                 categorias['otros'].platos.push(item);
             }
         });
+
+        actualizarMétricas();
 
         let htmlFinal = '';
         for (const key in categorias) {
@@ -191,7 +228,7 @@ function escucharCarta() {
     });
 }
 
-// --- NUEVA LÓGICA PARA EL MODAL PERSONALIZADO ---
+// --- LÓGICA PARA EL MODAL PERSONALIZADO ---
 let idParaEliminar = null;
 
 window.eliminarPlatoModal = (id) => {
