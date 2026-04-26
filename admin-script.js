@@ -59,15 +59,19 @@ function escucharPedidos() {
             if (p.estado === 'pendiente') {
                 botonesAccion = `
                     <div style="display:flex; gap:8px;">
-                        <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar" style="flex:3;">👩‍🍳 Preparar</button>
-                        <button onclick="rechazarPedido('${p.id}')" class="btn-action" style="background:#fee2e2; color:#ef4444; flex:1;">🗑️</button>
+                        <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar" style="flex:3; background: var(--sidebar); color: var(--accent); border: 1px solid var(--accent);">
+                            ${ICON_PREPARE} <span style="margin-left:8px;">PREPARAR</span>
+                        </button>
+                        <button onclick="rechazarPedido('${p.id}')" class="btn-action" style="background:#f9fafb; color:#ef4444; border: 1px solid #fee2e2; flex:1; display:flex; align-items:center; justify-content:center;">
+                            ${ICON_X}
+                        </button>
                     </div>`;
             } else if (p.estado === 'preparando') {
                 botonesAccion = `
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-                        <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi">Nequi</button>
-                        <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco">Banco</button>
-                        <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
+                        <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi" style="font-size:0.7rem; letter-spacing:1px;">NEQUI</button>
+                        <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco" style="font-size:0.7rem; letter-spacing:1px;">BANCO</button>
+                        <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo" style="font-size:0.7rem; letter-spacing:1px;">EFECTIVO</button>
                     </div>`;
             } else if (p.estado === 'listo') {
                 botonesAccion = `<button onclick="revertirPedido('${p.id}')" class="btn-action btn-outline" style="width:100%; font-size:0.8rem;">⬅️ Revertir</button>`;
