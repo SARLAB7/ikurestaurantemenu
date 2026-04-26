@@ -115,7 +115,24 @@
             </section>
         </main>
     </div>
+<div class="stats-grid">
+    <div class="stat-card"><span>Ventas Hoy</span><strong id="s-hoy">$0</strong></div>
+    <div class="stat-card"><span>Ventas Mes</span><strong id="s-mes">$0</strong></div>
+    <div class="stat-card"><span>Ticket Promedio</span><strong id="s-ticket-promedio">$0</strong></div>
+</div>
 
+<div class="stats-methods-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+    <div class="stat-card">
+        <h4>Pagos por Método</h4>
+        <p>Nequi: <b id="s-nequi">$0</b></p>
+        <p>Banco: <b id="s-bancolombia">$0</b></p>
+        <p>Efectivo: <b id="s-efectivo">$0</b></p>
+    </div>
+    <div class="stat-card">
+        <h4>Top Platos Hoy</h4>
+        <div id="rankings-categoria"></div>
+    </div>
+</div>
     <div id="delete-modal" class="modal-overlay">
         <div class="modal-card">
             <h3>¿Confirmar acción?</h3>
