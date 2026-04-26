@@ -161,14 +161,20 @@ function escucharCarta() {
         const list = document.getElementById('inv-list');
         list.innerHTML = '';
         
-        menuGlobal = {};
-
+        // Actualiza este objeto con los nuevos nombres
         const categorias = {
-            diario: { titulo: "Menú del Día", platos: [] },
-            rapida: { titulo: "Comidas Rápidas", platos: [] },
-            varios: { titulo: "Varios", platos: [] },
-            otros: { titulo: "Otros", platos: [] }
+            diario: "Menú del Día",
+            desayuno: "Desayunos",
+            especial: "Especiales",
+            asado: "Asados",
+            rapida: "Comida Rápida",
+            bebida: "Bebidas"
         };
+
+        // El resto del código que genera los grupos se encargará del resto automáticamente
+        // ...
+    });
+}
 
         snap.forEach(d => {
             const item = d.data();
