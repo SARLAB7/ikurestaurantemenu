@@ -107,7 +107,18 @@ function actualizarMétricas() {
     let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
     const ventasPlatos = {}, usoIngredientes = {}, hoy = new Date();
-
+if(rankingCont) {
+        rankingCont.innerHTML = `
+            <div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;">
+                <div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div>
+                <div>
+                    <div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Pérdidas Hoy</div>
+                    <strong style="font-size:1.4rem; color:var(--text-main);">$${valorRechazados.toLocaleString()}</strong>
+                    <div style="font-size:0.8rem; color:#be123c;">${rechazadosHoy} pedidos cancelados</div>
+                </div>
+            </div>
+        `;
+    }
     pedidosGlobales.forEach(p => {
         if(!p.timestamp) return;
         const f = p.timestamp.toDate();
