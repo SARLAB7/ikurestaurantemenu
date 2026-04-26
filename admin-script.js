@@ -4,8 +4,8 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from
 
 const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com"];
+
 const ICON_PREPARE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`;
-const ICON_CHECK = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 const ICON_X = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
@@ -34,7 +34,6 @@ onAuthStateChanged(auth, (u) => {
 let menuGlobal = {};
 let pedidosGlobales = [];
 
-// --- LÓGICA DE PEDIDOS ---
 function escucharPedidos() {
     const q = query(collection(db, "pedidos"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
@@ -42,7 +41,6 @@ function escucharPedidos() {
         const lp = document.getElementById('l-pendientes');
         const la = document.getElementById('l-atendidos');
         if(!lp || !la) return;
-
         lp.innerHTML = ''; la.innerHTML = '';
         
         snapshot.docs.forEach(docSnap => {
@@ -50,7 +48,7 @@ function escucharPedidos() {
             p.id = docSnap.id;
             pedidosGlobales.push(p);
 
-            if (p.estado === 'rechazado') return; // No mostrar rechazados en el monitor principal
+            if (p.estado === 'rechazado') return;
 
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
@@ -59,8 +57,8 @@ function escucharPedidos() {
             if (p.estado === 'pendiente') {
                 botonesAccion = `
                     <div style="display:flex; gap:8px;">
-                        <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar" style="flex:3; background: var(--sidebar); color: var(--accent); border: 1px solid var(--accent);">
-                            ${ICON_PREPARE} <span style="margin-left:8px;">PREPARAR</span>
+                        <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar" style="flex:3; background: var(--sidebar); color: var(--accent); border: 1px solid var(--accent); display:flex; align-items:center; justify-content:center; gap:8px;">
+                            ${ICON_PREPARE} PREPARAR
                         </button>
                         <button onclick="rechazarPedido('${p.id}')" class="btn-action" style="background:#f9fafb; color:#ef4444; border: 1px solid #fee2e2; flex:1; display:flex; align-items:center; justify-content:center;">
                             ${ICON_X}
@@ -106,19 +104,8 @@ function escucharPedidos() {
 function actualizarMétricas() {
     let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0;
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
-    const ventasPlatos = {}, usoIngredientes = {}, hoy = new Date();
-if(rankingCont) {
-        rankingCont.innerHTML = `
-            <div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;">
-                <div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div>
-                <div>
-                    <div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Pérdidas Hoy</div>
-                    <strong style="font-size:1.4rem; color:var(--text-main);">$${valorRechazados.toLocaleString()}</strong>
-                    <div style="font-size:0.8rem; color:#be123c;">${rechazadosHoy} pedidos cancelados</div>
-                </div>
-            </div>
-        `;
-    }
+    const ventasPlatos = {}, hoy = new Date();
+
     pedidosGlobales.forEach(p => {
         if(!p.timestamp) return;
         const f = p.timestamp.toDate();
@@ -134,7 +121,6 @@ if(rankingCont) {
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
                 if(p.metodoPago === 'banco') tBanco += Number(p.total);
                 if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
-
                 p.items.forEach(item => {
                     ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
                 });
@@ -146,7 +132,6 @@ if(rankingCont) {
     });
 
     const setUI = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
-    
     setUI('s-hoy', `$${tHoy.toLocaleString()}`);
     setUI('s-mes', `$${tMes.toLocaleString()}`);
     setUI('s-pedidos-total', pedidosHoyCount);
@@ -154,16 +139,17 @@ if(rankingCont) {
     setUI('s-bancolombia', `$${tBanco.toLocaleString()}`);
     setUI('s-efectivo', `$${tEfectivo.toLocaleString()}`);
     
-    // Crear dinámicamente la métrica de rechazados si no existe en el HTML
     const rankingCont = document.getElementById('rankings-rechazados');
     if(rankingCont) {
         rankingCont.innerHTML = `
-            <div style="width:100%; padding:15px; background:#fff1f2; border-radius:10px; border:1px solid #fecaca; text-align:center;">
-                <div style="color:#e11d48; font-size:0.8rem; font-weight:600;">Pedidos Rechazados Hoy</div>
-                <strong style="font-size:1.5rem; color:#be123c;">${rechazadosHoy}</strong>
-                <div style="font-size:0.85rem; color:#be123c; margin-top:5px;">Pérdida: $${valorRechazados.toLocaleString()}</div>
-            </div>
-        `;
+            <div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;">
+                <div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div>
+                <div style="text-align:left;">
+                    <div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Pérdidas Hoy</div>
+                    <strong style="font-size:1.4rem; color:var(--text-main);">$${valorRechazados.toLocaleString()}</strong>
+                    <div style="font-size:0.8rem; color:#be123c;">${rechazadosHoy} pedidos cancelados</div>
+                </div>
+            </div>`;
     }
 
     if(document.getElementById('rankings-categoria')) {
@@ -173,18 +159,16 @@ if(rankingCont) {
     }
 }
 
-// --- FUNCIONES DE ESTADO ---
 window.actualizarEstado = async (id, estado) => await updateDoc(doc(db, "pedidos", id), { estado });
 window.cerrarPedido = async (id, metodoPago) => await updateDoc(doc(db, "pedidos", id), { estado: 'listo', metodoPago: metodoPago });
 window.revertirPedido = async (id) => await updateDoc(doc(db, "pedidos", id), { estado: 'preparando', metodoPago: null });
 window.rechazarPedido = async (id) => {
-    if(confirm("¿Seguro que deseas rechazar/eliminar este pedido?")) {
+    if(confirm("¿Seguro que deseas rechazar este pedido?")) {
         await updateDoc(doc(db, "pedidos", id), { estado: 'rechazado' });
     }
 };
 window.toggleDisponibilidad = async (id, disp) => await updateDoc(doc(db, "platos", id), { disponible: disp });
 
-// --- GESTIÓN DE CARTA ---
 function escucharCarta() {
     onSnapshot(collection(db, "platos"), (snap) => {
         const list = document.getElementById('inv-list');
@@ -214,7 +198,6 @@ function escucharCarta() {
     });
 }
 
-// --- MODALES Y ELIMINACIÓN ---
 let idParaEliminar = null;
 window.eliminarPlatoModal = (id) => { idParaEliminar = id; document.getElementById('modal-title').innerText = '¿Borrar este plato?'; document.getElementById('delete-modal').style.display = 'flex'; };
 window.confirmarReinicioTotal = () => { if (auth.currentUser.email !== CORREO_MASTER) return; idParaEliminar = "REINICIO_TOTAL"; document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`; document.getElementById('delete-modal').style.display = 'flex'; };
@@ -230,7 +213,6 @@ if (btnConfirmarEliminar) {
     };
 }
 
-// --- FORMULARIO CARTA ---
 window.editarPlato = (id, nombre, precio, cat, desc, ing) => {
     document.getElementById('edit-id').value = id; document.getElementById('name').value = nombre; document.getElementById('price').value = precio; document.getElementById('category').value = cat; document.getElementById('desc').value = desc; document.getElementById('ingredients').value = ing; document.getElementById('f-title').innerText = "Editando Plato"; document.getElementById('btn-cancelar').style.display = 'block';
 };
@@ -243,7 +225,6 @@ document.getElementById('m-form').onsubmit = async (e) => {
     window.cancelarEdicion();
 };
 
-// --- PLANO DE MESAS ---
 window.renderizarPlanoMesas = function(pedidos) {
     const grid = document.getElementById('grid-mesas'); if (!grid) return;
     const mesasActivas = pedidos.filter(p => p.estado !== 'listo' && p.estado !== 'rechazado' && p.cliente.toLowerCase().includes('mesa'));
@@ -255,7 +236,6 @@ window.renderizarPlanoMesas = function(pedidos) {
     grid.innerHTML = html;
 };
 
-// --- IMPRESIÓN ---
 window.imprimirComanda = function(pJsonStr) {
     const p = JSON.parse(decodeURIComponent(pJsonStr));
     const div = document.createElement('div');
