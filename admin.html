@@ -143,10 +143,30 @@
                         </div>
                     </div>
 
-                    <div class="admin-panel-card" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                        <h4 style="margin-bottom: 15px;">Ingredientes Rechazados ❌</h4>
-                        <div id="rankings-rechazados" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                    </div>
+                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+    
+    <div class="admin-panel-card" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+        <h4 style="margin-bottom: 15px;">Ingresos por Método (Hoy)</h4>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
+                <span>Nequi</span> <strong id="s-nequi">$0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
+                <span>Banco</span> <strong id="s-bancolombia">$0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Efectivo</span> <strong id="s-efectivo">$0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-panel-card" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+        <h4 style="margin-bottom: 15px;">Control de Pérdidas ❌</h4>
+        <div id="rankings-rechazados">
+            <p style="color: var(--text-muted); font-size: 0.8rem;">Cargando datos de rechazos...</p>
+        </div>
+    </div>
+</div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 24px;">
