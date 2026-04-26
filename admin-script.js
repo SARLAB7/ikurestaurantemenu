@@ -18,16 +18,9 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
-        
-        // MOSTRAR HERRAMIENTAS MASTER SOLO A TI
-        if(u.email === CORREO_MASTER) {
-            document.getElementById('master-tools').style.display = 'block';
-        }
-
         escucharCarta(); 
         escucharPedidos(); 
     } else {
-        // ... resto del código igual
         if(u) signOut(auth);
         document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('login-screen').style.display = 'flex';
@@ -55,28 +48,6 @@ function escucharPedidos() {
 
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
-            
-            // Generar botones de acción según el estado
-            let botonesAccion = '';
-            if (p.estado === 'pendiente') {
-                botonesAccion = `
-                    <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar">
-                        👩‍🍳 Empezar a Preparar
-                    </button>`;
-            } else if (p.estado === 'preparando') {
-                botonesAccion = `
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-                        <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi">Nequi</button>
-                        <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco">Banco</button>
-                        <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
-                    </div>`;
-            } else if (p.estado === 'listo') {
-                botonesAccion = `
-                    <button onclick="revertirPedido('${p.id}')" class="btn-action btn-outline" style="width:100%; font-size:0.8rem;">
-                        ⬅️ Revertir a Preparando
-                    </button>`;
-            }
-
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;">
                     <div>
@@ -96,11 +67,7 @@ function escucharPedidos() {
                         </div>
                     `).join('')}
                 </div>
-                <div class="acciones-pedido">
-                    ${botonesAccion}
-                </div>
             `;
-            
             if (p.estado === 'listo') la.appendChild(card);
             else lp.appendChild(card);
         });
@@ -273,29 +240,10 @@ window.eliminarPlatoModal = (id) => {
     document.getElementById('delete-modal').style.display = 'flex';
 };
 
-// --- FUNCIÓN EXCLUSIVA MASTER ---
-window.confirmarReinicioTotal = () => {
-    if (auth.currentUser.email !== CORREO_MASTER) return;
-    idParaEliminar = "REINICIO_TOTAL"; 
-    document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`;
-    document.getElementById('delete-modal').style.display = 'flex';
-};
-
-// UN SOLO EVENTO PARA EL BOTÓN (Aquí estaba el error)
 const btnConfirmarEliminar = document.getElementById('confirm-delete-btn');
 if (btnConfirmarEliminar) {
     btnConfirmarEliminar.onclick = async () => {
-        if (idParaEliminar === "REINICIO_TOTAL") {
-            try {
-                const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
-                await Promise.all(promesas);
-                alert("Métricas reiniciadas con éxito.");
-            } catch (e) {
-                console.error("Error al reiniciar:", e);
-            }
-            document.getElementById('delete-modal').style.display = 'none';
-            idParaEliminar = null;
-        } else if (idParaEliminar) {
+        if (idParaEliminar) {
             await deleteDoc(doc(db, "platos", idParaEliminar));
             idParaEliminar = null;
             document.getElementById('delete-modal').style.display = 'none';
@@ -393,36 +341,3 @@ window.imprimirComanda = function(pJsonStr) {
     window.print();
     document.body.removeChild(div);
 };
-// --- FUNCIÓN EXCLUSIVA MASTER ---
-window.confirmarReinicioTotal = () => {
-    if (auth.currentUser.email !== CORREO_MASTER) return;
-    
-    // Reutilizamos tu modal de borrado
-    idParaEliminar = "REINICIO_TOTAL"; 
-    document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`;
-    document.getElementById('delete-modal').style.display = 'flex';
-};
-
-// Modifica el evento del botón confirmar del modal que ya tenías:
-const btnConfirmarEliminar = document.getElementById('confirm-delete-btn');
-if (btnConfirmarEliminar) {
-    btnConfirmarEliminar.onclick = async () => {
-        if (idParaEliminar === "REINICIO_TOTAL") {
-            // Borrado masivo (loop sobre los pedidos actuales)
-            try {
-                const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
-                await Promise.all(promesas);
-                alert("Métricas reiniciadas con éxito.");
-            } catch (e) {
-                console.error("Error al reiniciar:", e);
-            }
-            document.getElementById('delete-modal').style.display = 'none';
-            idParaEliminar = null;
-        } else if (idParaEliminar) {
-            // Lógica normal para un solo plato
-            await deleteDoc(doc(db, "platos", idParaEliminar));
-            idParaEliminar = null;
-            document.getElementById('delete-modal').style.display = 'none';
-        }
-    };
-}
