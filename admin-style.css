@@ -15,7 +15,7 @@ body { background: var(--bg); color: var(--text-main); overflow: hidden; height:
 
 #admin-panel { display: flex; width: 100vw; height: 100vh; }
 
-.sidebar { width: 260px; background: var(--sidebar); color: #9ca3af; display: flex; flex-direction: column; padding: 24px 0; z-index: 100; }
+.sidebar { width: 260px; background: var(--sidebar); color: #9ca3af; display: flex; flex-direction: column; padding: 24px 0; z-index: 100; transition: 0.3s; }
 .sidebar h2 { color: white; text-align: center; margin-bottom: 40px; letter-spacing: 2px; }
 .nav-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
 .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: white; }
@@ -67,11 +67,89 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
 .banco { background-color: #0047BA; }
 .efectivo { background-color: var(--success); }
 
+/* --- TICKET IMPRESIÓN --- */
 @media print {
     body * { visibility: hidden; }
     #ticket-impresion, #ticket-impresion * { visibility: visible; }
     #ticket-impresion {
         position: absolute; left: 0; top: 0; width: 100%; max-width: 80mm;
         margin: 0; padding: 10px; font-family: monospace; font-size: 14px; color: #000; background: white;
+    }
+}
+
+/* =========================================
+   NUEVO: DISEÑO RESPONSIVE (MÓVILES Y TABLETS)
+   ========================================= */
+@media screen and (max-width: 768px) {
+    #admin-panel {
+        flex-direction: column;
+    }
+
+    /* Convertimos la barra lateral en una Bottom Navigation Bar */
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        padding: 0;
+        z-index: 9999;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+    }
+
+    .sidebar h2 {
+        display: none; /* Ocultar el título del Sidebar en móvil */
+    }
+
+    .nav-item {
+        flex-direction: column;
+        padding: 10px 4px;
+        font-size: 0.65rem;
+        flex: 1;
+        text-align: center;
+        gap: 4px;
+    }
+
+    .nav-icon {
+        width: 22px;
+        height: 22px;
+        margin: 0;
+    }
+
+    /* Ajuste para que el botón de Cerrar Sesión se alinee como un botón más abajo */
+    .sidebar > div:last-child {
+        margin-top: 0 !important;
+        display: flex;
+        flex: 1;
+    }
+
+    /* Ajustamos el contenido para que la barra inferior no lo tape */
+    .main-content {
+        padding: 16px;
+        padding-bottom: 100px; 
+        height: 100vh;
+    }
+
+    /* Forzamos a que las columnas se apilen al 100% de ancho de pantalla */
+    .view-section > div[style*="display: flex"] > div {
+        min-width: 100% !important;
+    }
+
+    /* Ajustes estéticos de tarjeta para pantalla pequeña */
+    .pedido-card {
+        padding: 16px;
+    }
+
+    .btn-pago {
+        padding: 12px 4px;
+        font-size: 0.8rem;
+    }
+
+    /* Ajuste responsivo de la pantalla de Login */
+    #login-screen > div {
+        width: 90% !important;
+        max-width: 400px;
+        padding: 30px 20px !important;
     }
 }
