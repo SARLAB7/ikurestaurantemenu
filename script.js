@@ -123,13 +123,15 @@ window.enviarPedido = async () => {
     }
 
     const total = carrito.reduce((s, x) => s + (x.precio * x.cantidad), 0);
+    
+    // Aquí preparamos los items manteniendo sus ingredientes excluidos
     let itemsParaEnviar = [];
     carrito.forEach(item => {
         for(let k = 0; k < item.cantidad; k++) {
             itemsParaEnviar.push({
                 nombre: item.nombre,
                 precio: item.precio,
-                excluidos: item.excluidos || []
+                excluidos: item.excluidos || [] // IMPORTANTE: Enviamos los tachados
             });
         }
     });
@@ -141,7 +143,13 @@ window.enviarPedido = async () => {
         });
         
         if (quiereWA) {
-            window.open(`https://wa.me/573210000000?text=*PEDIDO IKU*%0A*Cliente:* ${cliente}%0A*Total:* $${total.toLocaleString()}`);
+            // Formatear mensaje de WhatsApp con los "SIN"
+            let msgWA = `*NUEVO PEDIDO IKU*%0A*Cliente:* ${cliente}%0A------------------%0A`;
+            carrito.forEach(i => {
+                msgWA += `• ${i.cantidad}x ${i.nombre} ${i.excluidos.length > 0 ? `(SIN: ${i.excluidos.join(', ')})` : ''}%0A`;
+            });
+            msgWA += `------------------%0A*Total:* $${total.toLocaleString()}`;
+            window.open(`https://wa.me/573210000000?text=${msgWA}`);
         }
         
         btn.innerHTML = "¡Pedido enviado! ✅";
