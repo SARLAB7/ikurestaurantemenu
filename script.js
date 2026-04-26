@@ -201,6 +201,7 @@ window.iniciarTracker = (id) => {
 onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => {
     const categoriasIds = ['diario', 'desayuno', 'especial', 'asado', 'rapida', 'bebida'];
     
+    // 1. LIMPIEZA TOTAL: Limpiamos todos los contenedores antes de procesar
     categoriasIds.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '';
@@ -208,9 +209,10 @@ onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => 
 
     document.getElementById('loader').style.display = 'none';
 
+    // 2. REPARTO DE PLATOS
     snap.forEach(docSnap => {
         const d = docSnap.data();
-        if(d.disponible === false) return; // No mostrar si no hay disponibilidad
+        if(d.disponible === false) return; 
 
         let ingredientesHTML = '';
         if (d.ingredientes && d.ingredientes.length > 0) {
@@ -247,7 +249,16 @@ onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => 
         </div>`;
         
         const container = document.getElementById(d.categoria);
-        if(container) container.innerHTML += html;
+        if(container) {
+            container.insertAdjacentHTML('beforeend', html);
+        }
+    });
+
+    // 3. RE-SINCRONIZAR VISIBILIDAD
+    // Aseguramos que solo la sección que tiene el botón "active" se muestre
+    const tabActiva = document.querySelector('.tab-btn.active').dataset.tab;
+    document.querySelectorAll('.menu-section').forEach(s => {
+        s.style.display = (s.id === tabActiva) ? 'block' : 'none';
     });
 });
 
