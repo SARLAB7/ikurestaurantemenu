@@ -18,6 +18,13 @@ onAuthStateChanged(auth, (u) => {
     if(u && correosAutorizados.includes(u.email)) {
         document.getElementById('admin-panel').style.display = 'flex';
         document.getElementById('login-screen').style.display = 'none';
+        
+        // MOSTRAR HERRAMIENTAS MASTER SOLO A TI
+        const masterTools = document.getElementById('master-tools');
+        if (masterTools) {
+            masterTools.style.display = (u.email === CORREO_MASTER) ? 'block' : 'none';
+        }
+
         escucharCarta(); 
         escucharPedidos(); 
     } else {
@@ -81,7 +88,7 @@ function actualizarMétricas() {
     let tNequi = 0, tBanco = 0, tEfectivo = 0;
     
     const ventasPlatos = {};
-    const usoIngredientes = {};       
+    const usoIngredientes = {};        
     const ingredientesRechazados = {}; 
     
     const hoy = new Date();
@@ -231,7 +238,7 @@ function escucharCarta() {
     });
 }
 
-// --- MODALES Y EDICIÓN ---
+// --- MODALES Y ACCIONES ---
 let idParaEliminar = null;
 
 window.eliminarPlatoModal = (id) => {
@@ -240,17 +247,33 @@ window.eliminarPlatoModal = (id) => {
     document.getElementById('delete-modal').style.display = 'flex';
 };
 
+window.confirmarReinicioTotal = () => {
+    if (auth.currentUser.email !== CORREO_MASTER) return;
+    idParaEliminar = "REINICIO_TOTAL"; 
+    document.getElementById('modal-title').innerHTML = `<span style="color:var(--danger)">¿ESTÁS SEGURO?</span><br>Se borrarán todos los pedidos y las métricas volverán a cero.`;
+    document.getElementById('delete-modal').style.display = 'flex';
+};
+
 const btnConfirmarEliminar = document.getElementById('confirm-delete-btn');
 if (btnConfirmarEliminar) {
     btnConfirmarEliminar.onclick = async () => {
-        if (idParaEliminar) {
+        if (idParaEliminar === "REINICIO_TOTAL") {
+            try {
+                const promesas = pedidosGlobales.map(p => deleteDoc(doc(db, "pedidos", p.id)));
+                await Promise.all(promesas);
+                alert("Métricas reiniciadas con éxito.");
+            } catch (e) {
+                console.error("Error al reiniciar:", e);
+            }
+        } else if (idParaEliminar) {
             await deleteDoc(doc(db, "platos", idParaEliminar));
-            idParaEliminar = null;
-            document.getElementById('delete-modal').style.display = 'none';
         }
+        idParaEliminar = null;
+        document.getElementById('delete-modal').style.display = 'none';
     };
 }
 
+// --- EDICIÓN Y OTROS ---
 window.editarPlato = (id, nombre, precio, cat, desc, ing) => {
     document.getElementById('edit-id').value = id;
     document.getElementById('name').value = nombre;
