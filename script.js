@@ -201,7 +201,7 @@ window.iniciarTracker = (id) => {
 onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => {
     const categoriasIds = ['diario', 'desayuno', 'especial', 'asado', 'rapida', 'bebida'];
     
-    // 1. LIMPIEZA TOTAL: Limpiamos todos los contenedores antes de procesar
+    // 1. Limpieza inicial de todos los contenedores
     categoriasIds.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '';
@@ -209,7 +209,7 @@ onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => 
 
     document.getElementById('loader').style.display = 'none';
 
-    // 2. REPARTO DE PLATOS
+    // 2. Distribución de platos por categoría
     snap.forEach(docSnap => {
         const d = docSnap.data();
         if(d.disponible === false) return; 
@@ -254,14 +254,49 @@ onSnapshot(query(collection(db, "platos"), orderBy("nombre", "asc")), (snap) => 
         }
     });
 
-    // 3. RE-SINCRONIZAR VISIBILIDAD
-    // Aseguramos que solo la sección que tiene el botón "active" se muestre
-    const tabActiva = document.querySelector('.tab-btn.active').dataset.tab;
-    document.querySelectorAll('.menu-section').forEach(s => {
-        s.style.display = (s.id === tabActiva) ? 'block' : 'none';
-    });
+    // 3. ACTUALIZACIÓN FORZADA DE VISIBILIDAD
+    // Buscamos cuál es el botón que tiene la clase 'active' actualmente
+    const activeBtn = document.querySelector('.tab-btn.active');
+    if (activeBtn) {
+        const targetTab = activeBtn.dataset.tab;
+        document.querySelectorAll('.menu-section').forEach(section => {
+            if (section.id === targetTab) {
+                section.style.display = 'block';
+                section.classList.add('active');
+            } else {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            }
+        });
+    }
 });
 
+// --- CAMBIO DE TABS (MEJORADO) ---
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+        // Quitar estado activo de todos los botones
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Poner activo al actual
+        btn.classList.add('active');
+
+        const targetTab = btn.dataset.tab;
+
+        // Ocultar todas las secciones y mostrar solo la seleccionada
+        document.querySelectorAll('.menu-section').forEach(section => {
+            if (section.id === targetTab) {
+                section.style.display = 'block';
+                // Pequeño delay para que la transición de CSS (si tienes una) se note
+                setTimeout(() => section.classList.add('active'), 10);
+            } else {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            }
+        });
+        
+        // Scroll automático hacia arriba al cambiar de pestaña (opcional, muy útil en móvil)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+});
 // --- CAMBIO DE TABS ---
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
