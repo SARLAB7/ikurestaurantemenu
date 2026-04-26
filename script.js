@@ -136,7 +136,7 @@ window.enviarPedido = async () => {
             let msgWA = `*NUEVO PEDIDO IKU*%0A*Cliente:* ${cliente}%0A------------------%0A`;
             carrito.forEach(i => { msgWA += `• ${i.cantidad}x ${i.nombre} ${i.excluidos.length > 0 ? `(SIN: ${i.excluidos.join(', ')})` : ''}%0A`; });
             msgWA += `------------------%0A*Total:* $${total.toLocaleString()}`;
-            window.open(`https://wa.me/573210000000?text=${msgWA}`);
+            window.open(`https://wa.me/573113342309?text=${msgWA}`);
         }
         btn.innerHTML = "¡Pedido enviado! ✅";
         setTimeout(() => {
