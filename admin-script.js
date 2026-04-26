@@ -48,6 +48,28 @@ function escucharPedidos() {
 
             const card = document.createElement('div');
             card.className = `pedido-card ${p.estado}`;
+            
+            // Generar botones de acción según el estado
+            let botonesAccion = '';
+            if (p.estado === 'pendiente') {
+                botonesAccion = `
+                    <button onclick="actualizarEstado('${p.id}', 'preparando')" class="btn-estado btn-preparar">
+                        👩‍🍳 Empezar a Preparar
+                    </button>`;
+            } else if (p.estado === 'preparando') {
+                botonesAccion = `
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+                        <button onclick="cerrarPedido('${p.id}', 'nequi')" class="btn-pago nequi">Nequi</button>
+                        <button onclick="cerrarPedido('${p.id}', 'banco')" class="btn-pago banco">Banco</button>
+                        <button onclick="cerrarPedido('${p.id}', 'efectivo')" class="btn-pago efectivo">Efectivo</button>
+                    </div>`;
+            } else if (p.estado === 'listo') {
+                botonesAccion = `
+                    <button onclick="revertirPedido('${p.id}')" class="btn-action btn-outline" style="width:100%; font-size:0.8rem;">
+                        ⬅️ Revertir a Preparando
+                    </button>`;
+            }
+
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 10px;">
                     <div>
@@ -67,7 +89,11 @@ function escucharPedidos() {
                         </div>
                     `).join('')}
                 </div>
+                <div class="acciones-pedido">
+                    ${botonesAccion}
+                </div>
             `;
+            
             if (p.estado === 'listo') la.appendChild(card);
             else lp.appendChild(card);
         });
