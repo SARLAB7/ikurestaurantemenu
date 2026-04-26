@@ -229,3 +229,27 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--bo
     background: #f59e0b; /* Naranja/Amarillo */
     color: white;
 }
+/* --- CRÉDITO SARLAB EN ADMIN --- */
+.admin-sarlab-credit {
+    padding: 15px 24px;
+    font-size: 0.6rem;
+    color: #6b7280; /* Gris sutil para no competir con los iconos */
+    letter-spacing: 1px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Línea muy tenue */
+    text-transform: uppercase;
+}
+
+.admin-sarlab-credit strong {
+    color: #fff; /* Tu marca en blanco para resaltar */
+    font-weight: 600;
+}
+
+/* Ajuste para que en móvil no quede pegado al borde */
+@media screen and (max-width: 768px) {
+    .admin-sarlab-credit {
+        text-align: center;
+        padding: 10px;
+        border-top: none;
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
