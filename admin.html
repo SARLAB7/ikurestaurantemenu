@@ -154,7 +154,15 @@
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         };
-
+<strong id="s-hoy">$0</strong>
+<strong id="s-mes">$0</strong>
+<b id="s-nequi">$0</b>
+<b id="s-bancolombia">$0</b>
+<b id="s-efectivo">$0</b>
+        <input type="hidden" id="edit-id"> <input type="text" id="p-nombre">
+<input type="number" id="p-precio">
+<select id="p-categoria">...</select>
+<textarea id="p-desc"></textarea>
         function toggleAtendidos() {
             const l = document.getElementById('l-atendidos');
             const c = document.getElementById('chevron-atendidos');
