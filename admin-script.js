@@ -62,7 +62,22 @@ function escucharPedidos() {
         actualizarMétricas(); renderizarPlanoMesas(pedidosGlobales);
     });
 }
-
+// Ejemplo de cómo debería renderizarse cada bloque de categoría
+`
+<div class="categoria-wrapper">
+    <div class="categoria-header" onclick="toggleCategoria('lista-${cat}', 'chevron-${cat}')">
+        <div>
+            <h4>${nombreCategoria}</h4>
+            <span class="count-badge">${cantidadPlatos} platos</span>
+        </div>
+        <svg id="chevron-${cat}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </div>
+    <div id="lista-${cat}" class="lista-categoria">
+        </div>
+</div>
+`
 // FUNCION DE MÉTRICAS CORREGIDA Y UNIFICADA
 window.actualizarMétricas = function() {
     let tVentas = 0, tMes = 0, pedidosContados = 0, rechazadosContados = 0, valorRechazados = 0;
