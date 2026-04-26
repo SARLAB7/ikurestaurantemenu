@@ -5,19 +5,18 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from
 const correosAutorizados = ["cb01grupo@gmail.com", "kelly.araujotafur@gmail.com"];
 const formatPrice = (num) => Number(num).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
-// --- AUTENTICACIÓN ---
 onAuthStateChanged(auth, (user) => {
     const loginScreen = document.getElementById('login-screen');
     const adminPanel = document.getElementById('admin-panel');
 
     if (user && correosAutorizados.includes(user.email)) {
-        loginScreen.style.display = 'none';
-        adminPanel.style.display = 'flex';
+        if(loginScreen) loginScreen.style.display = 'none';
+        if(adminPanel) adminPanel.style.display = 'flex';
         iniciarAppAdmin();
     } else {
-        loginScreen.style.display = 'flex';
-        adminPanel.style.display = 'none';
-        if (user) signOut(auth); // Cerrar sesión si no está autorizado
+        if(loginScreen) loginScreen.style.display = 'flex';
+        if(adminPanel) adminPanel.style.display = 'none';
+        if (user) signOut(auth);
     }
 });
 
@@ -29,11 +28,12 @@ function iniciarAppAdmin() {
     escucharCarta();
 }
 
-// --- GESTIÓN DE PEDIDOS ---
 function escucharPedidos() {
     onSnapshot(query(collection(db, "pedidos"), orderBy("fecha", "desc")), (snapshot) => {
         const listaActivos = document.getElementById('l-activos');
         const listaAtendidos = document.getElementById('l-atendidos');
+        if(!listaActivos || !listaAtendidos) return;
+
         listaActivos.innerHTML = '';
         listaAtendidos.innerHTML = '';
 
@@ -43,15 +43,18 @@ function escucharPedidos() {
             const card = document.createElement('div');
             card.className = `order-card state-${p.estado}`;
             
+            // Verificación de seguridad para items
+            const itemsHTML = p.items ? p.items.map(i => `<p>• ${i.cantidad}x ${i.nombre}</p>`).join('') : 'Sin productos';
+
             card.innerHTML = `
                 <div class="order-header">
                     <h4>${p.cliente} <span>(${p.tipo})</span></h4>
                     <span class="badge">${p.estado.toUpperCase()}</span>
                 </div>
                 <div class="order-body">
-                    ${p.items.map(i => `<p>• ${i.cantidad}x ${i.nombre}</p>`).join('')}
+                    ${itemsHTML}
                     <hr>
-                    <p><strong>Total: ${formatPrice(p.total)}</strong></p>
+                    <p><strong>Total: ${formatPrice(p.total || 0)}</strong></p>
                 </div>
                 <div class="order-actions">
                     ${p.estado === 'recibido' ? `<button onclick="window.cambiarEstado('${id}', 'preparando')">Cocinar</button>` : ''}
@@ -69,10 +72,10 @@ function escucharPedidos() {
 window.cambiarEstado = (id, nuevoEstado) => updateDoc(doc(db, "pedidos", id), { estado: nuevoEstado });
 window.eliminarPedido = (id) => confirm("¿Eliminar pedido?") && deleteDoc(doc(db, "pedidos", id));
 
-// --- GESTIÓN DE CARTA (CRUD) ---
 function escucharCarta() {
     onSnapshot(collection(db, "menu"), (snapshot) => {
         const invList = document.getElementById('inv-list');
+        if(!invList) return;
         invList.innerHTML = '';
         snapshot.docs.forEach(docSnap => {
             const d = docSnap.data();
@@ -89,15 +92,30 @@ function escucharCarta() {
     });
 }
 
+// Vinculamos guardarPlato a window para que el HTML lo vea
 window.guardarPlato = async () => {
+    const nombre = document.getElementById('p-nombre').value;
+    const precio = document.getElementById('p-precio').value;
+
+    if(!nombre || !precio) return alert("Nombre y precio son obligatorios");
+
     const plato = {
-        nombre: document.getElementById('p-nombre').value,
-        precio: Number(document.getElementById('p-precio').value),
+        nombre: nombre,
+        precio: Number(precio),
         categoria: document.getElementById('p-categoria').value,
-        descripcion: document.getElementById('p-desc').value
+        descripcion: document.getElementById('p-desc').value,
+        fechaCreacion: serverTimestamp()
     };
-    await addDoc(collection(db, "menu"), plato);
-    alert("Plato agregado");
+
+    try {
+        await addDoc(collection(db, "menu"), plato);
+        alert("Plato agregado correctamente");
+        // Limpiar campos
+        document.getElementById('p-nombre').value = '';
+        document.getElementById('p-precio').value = '';
+    } catch(e) {
+        console.error(e);
+    }
 };
 
 window.eliminarPlato = (id) => confirm("¿Eliminar de la carta?") && deleteDoc(doc(db, "menu", id));
