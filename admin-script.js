@@ -65,31 +65,102 @@ function escucharPedidos() {
 }
 
 function actualizarMétricas() {
-    let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0, tNequi = 0, tBanco = 0, tEfectivo = 0;
-    const ventasPlatos = {}, hoy = new Date();
+    let tHoy = 0, tMes = 0, pedidosHoyCount = 0, rechazadosHoy = 0, valorRechazados = 0;
+    let tNequi = 0, tBanco = 0, tEfectivo = 0;
+    
+    const ventasPlatos = {};
+    const usoIngredientes = {}; 
+    const hoy = new Date();
 
     pedidosGlobales.forEach(p => {
         if(!p.timestamp) return;
-        const f = p.timestamp.toDate(), esHoy = f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+        const f = p.timestamp.toDate();
+        const esHoy = f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+
         if(esHoy) {
-            if(p.estado === 'rechazado') { rechazadosHoy++; valorRechazados += Number(p.total); }
-            else {
-                tHoy += Number(p.total); pedidosHoyCount++;
+            if(p.estado === 'rechazado') {
+                rechazadosHoy++;
+                valorRechazados += Number(p.total);
+            } else {
+                tHoy += Number(p.total);
+                pedidosHoyCount++;
+                
+                // Contar dinero por método
                 if(p.metodoPago === 'nequi') tNequi += Number(p.total);
                 if(p.metodoPago === 'banco') tBanco += Number(p.total);
                 if(p.metodoPago === 'efectivo') tEfectivo += Number(p.total);
-                p.items.forEach(item => { ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1; });
+
+                // Lógica para Top Platos e Ingredientes
+                p.items.forEach(item => {
+                    // 1. Contar el plato en el ranking
+                    ventasPlatos[item.nombre] = (ventasPlatos[item.nombre] || 0) + 1;
+
+                    // 2. Buscar qué ingredientes usa este plato (desde menuGlobal)
+                    const ingredientesBase = menuGlobal[item.nombre] || [];
+                    const excluidosPorCliente = item.excluidos || [];
+
+                    ingredientesBase.forEach(ing => {
+                        // Solo contamos el ingrediente si el cliente NO lo pidió quitar
+                        if (!excluidosPorCliente.includes(ing)) {
+                            usoIngredientes[ing] = (usoIngredientes[ing] || 0) + 1;
+                        }
+                    });
+                });
             }
         }
-        if(f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear() && p.estado !== 'rechazado') tMes += Number(p.total);
+        
+        // Venta mensual (solo pedidos no rechazados)
+        if(f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear() && p.estado !== 'rechazado') {
+            tMes += Number(p.total);
+        }
     });
 
+    // --- RENDERIZADO EN INTERFAZ ---
     const setUI = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
-    setUI('s-hoy', `$${tHoy.toLocaleString()}`); setUI('s-mes', `$${tMes.toLocaleString()}`); setUI('s-pedidos-total', pedidosHoyCount);
-    setUI('s-nequi', `$${tNequi.toLocaleString()}`); setUI('s-bancolombia', `$${tBanco.toLocaleString()}`); setUI('s-efectivo', `$${tEfectivo.toLocaleString()}`);
     
-    const rCont = document.getElementById('rankings-rechazados');
-    if(rCont) rCont.innerHTML = `<div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;"><div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div><div style="text-align:left;"><div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase;">Pérdidas Hoy</div><strong style="font-size:1.4rem;">$${valorRechazados.toLocaleString()}</strong><div style="font-size:0.8rem; color:#be123c;">${rechazadosHoy} pedidos cancelados</div></div></div>`;
+    setUI('s-hoy', `$${tHoy.toLocaleString()}`);
+    setUI('s-mes', `$${tMes.toLocaleString()}`);
+    setUI('s-pedidos-total', pedidosHoyCount);
+    setUI('s-nequi', `$${tNequi.toLocaleString()}`);
+    setUI('s-bancolombia', `$${tBanco.toLocaleString()}`);
+    setUI('s-efectivo', `$${tEfectivo.toLocaleString()}`);
+    
+    // Cuadro de Pérdidas
+    const rRechazados = document.getElementById('rankings-rechazados');
+    if(rRechazados) {
+        rRechazados.innerHTML = `
+            <div style="width:100%; padding:20px; background:white; border-radius:12px; border:1px solid #f3f4f6; display:flex; align-items:center; gap:15px;">
+                <div style="background:#fff1f2; padding:12px; border-radius:10px; color:#e11d48;">${ICON_X}</div>
+                <div style="text-align:left;">
+                    <div style="color:var(--text-muted); font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Pérdidas Hoy</div>
+                    <strong style="font-size:1.4rem; color:var(--text-main);">$${valorRechazados.toLocaleString()}</strong>
+                    <div style="font-size:0.8rem; color:#be123c;">${rechazadosHoy} pedidos cancelados</div>
+                </div>
+            </div>`;
+    }
+
+    // Top 5 Platos
+    const rPlatos = document.getElementById('rankings-categoria');
+    if(rPlatos) {
+        const sortedPlatos = Object.entries(ventasPlatos).sort((a,b) => b[1] - a[1]).slice(0,5);
+        rPlatos.innerHTML = sortedPlatos.map(([n,v]) => `
+            <div style="padding:12px; background:#f9fafb; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.9rem; font-weight:500;">${n}</span>
+                <strong style="background:var(--sidebar); color:white; padding:2px 8px; border-radius:4px; font-size:0.85rem;">${v}</strong>
+            </div>
+        `).join('') || '<p style="color:var(--text-muted); font-size:0.8rem;">Esperando ventas...</p>';
+    }
+
+    // Rotación de Despensa (Ingredientes)
+    const rIngredientes = document.getElementById('rankings-ingredientes');
+    if(rIngredientes) {
+        const sortedIng = Object.entries(usoIngredientes).sort((a,b) => b[1] - a[1]);
+        rIngredientes.innerHTML = sortedIng.map(([n,v]) => `
+            <span style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:500;">
+                ${n} (${v})
+            </span>
+        `).join('') || '<p style="color:var(--text-muted); font-size:0.8rem;">Sin datos de consumo</p>';
+    }
 }
 
 // Funciones de estado
