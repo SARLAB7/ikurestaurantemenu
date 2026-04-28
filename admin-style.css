@@ -37,40 +37,37 @@ body { background: var(--bg-dark); color: var(--text-white); overflow: hidden; h
 .main-content { flex: 1; padding: 40px; overflow-y: auto; height: 100vh; }
 .view-section { display: none; animation: fadeIn 0.4s ease; }
 .view-section.active { display: block; }
-
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Dashboard Header */
 .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .dashboard-header h2 { font-size: 2rem; font-weight: 700; color: var(--white); }
 
-/* Tarjetas Bento */
+/* --- BENTO GRID SYSTEM --- */
+.bento-grid-pedidos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    align-items: start; 
+}
+
+.bento-grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
 .card-bento {
     background: var(--card-dark);
     border-radius: 24px;
     padding: 24px;
     border: 1px solid var(--border);
-    /* Eliminamos cualquier height o min-height fijo aquí si lo tenías */
-    height: fit-content; /* Esto hace que la tarjeta solo ocupe lo que sus hijos necesitan */
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 20px;
+    height: auto;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
 }
-/* Bento Grid Stats */
-.bento-grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-.card-yellow { background: var(--accent-yellow); color: #000; border: none; display: flex; flex-direction: column; }
+
+.card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.card-yellow { background: var(--accent-yellow); color: #000; border: none; }
 .card-danger { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
 .span-2 { grid-column: span 2; }
-.bento-grid-pedidos {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
-    align-items: start; /* Importante: evita que una columna se estire para igualar a la otra */
-}
+
 /* Tipografía Stats */
 .card-label { font-size: 0.85rem; font-weight: 600; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
 .big-number { font-size: 3.5rem; font-weight: 800; margin: 10px 0; line-height: 1; }
@@ -92,10 +89,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-yellow); 
 .btn-outline { border: 1px solid var(--border); background: transparent; color: var(--text-muted); }
 
 /* Tarjetas de Pedido */
-.pedido-card { background: var(--sidebar); padding: 20px; border-radius: 16px; margin-bottom: 15px; border-left: 4px solid var(--border); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.pedido-card { background: var(--sidebar); padding: 20px; border-radius: 16px; margin-bottom: 15px; border-left: 4px solid var(--border); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: transform 0.2s ease;}
 .pedido-card.pendiente { border-left-color: var(--danger); }
 .pedido-card.preparando { border-left-color: var(--accent-yellow); }
 .pedido-card.listo { border-left-color: var(--success); opacity: 0.7; }
+.pedido-card:hover { transform: scale(1.02); }
 
 .acciones-pedido { margin-top: 15px; display: flex; gap: 8px; flex-direction: column; }
 .btn-estado { padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -131,35 +129,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-yellow); 
     .bento-grid-stats { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-    body { overflow-y: auto; height: auto; }
+    body { overflow-y: auto !important; height: auto !important; }
     #admin-panel { flex-direction: column; height: auto; }
     .sidebar { flex-direction: row; width: 100%; padding: 0; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
     .sidebar h2 { display: none; }
     .nav-item { flex-direction: column; padding: 12px; font-size: 0.65rem; min-width: 80px; text-align: center; border-right: none; border-bottom: 3px solid transparent; }
     .nav-item.active { border-right: none; border-bottom: 3px solid var(--accent-yellow); }
     .main-content { padding: 20px; height: auto; overflow: visible; }
-    .bento-grid-stats { grid-template-columns: 1fr; }
+    .bento-grid-stats, .bento-grid-pedidos { grid-template-columns: 1fr; }
     .span-2 { grid-column: span 1; }
     .admin-sarlab-credit { display: none; }
 }
 
 @media print { body * { visibility: hidden; } #ticket-impresion, #ticket-impresion * { visibility: visible; } #ticket-impresion { position: absolute; left: 0; top: 0; width: 100%; max-width: 80mm; background: white; color: black; padding: 10px; font-family: monospace; } }
-
-
-
-.bento-grid-pedidos {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
-    align-items: start; /* CRÍTICO: Mantiene las tarjetas compactas */
-}
-
-.card-bento {
-    background: var(--card-dark);
-    border-radius: 24px;
-    padding: 24px;
-    border: 1px solid var(--border);
-    height: auto; 
-    display: flex;
-    flex-direction: column;
-}
