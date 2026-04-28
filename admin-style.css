@@ -130,3 +130,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-yellow); 
 }
 
 @media print { body * { visibility: hidden; } #ticket-impresion, #ticket-impresion * { visibility: visible; } #ticket-impresion { position: absolute; left: 0; top: 0; width: 100%; max-width: 80mm; background: white; color: black; padding: 10px; font-family: monospace; } }
+
