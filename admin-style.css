@@ -82,7 +82,120 @@ body { background: var(--bg-dark); color: var(--text-white); overflow: hidden; h
 /* Dashboard Header */
 .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .dashboard-header h2 { font-size: 2rem; font-weight: 700; color: var(--white); }
+.row-hover:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+/* Contenedor de tabla estilo Glassmorphism */
+.dashboard-table-wrapper {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
 
+/* Filas con hover suave */
+.row-hover {
+    cursor: default;
+}
+
+.row-hover:hover {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Estilo para los inputs de la tabla (más limpios) */
+.table-input-stock {
+    background: #0f1115 !important;
+    border: 1px solid var(--border) !important;
+    color: var(--accent-yellow) !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    padding: 4px !important;
+    margin-bottom: 0 !important;
+    transition: all 0.2s ease;
+}
+
+.table-input-stock:focus {
+    border-color: var(--accent-yellow) !important;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.15);
+}
+#busqueda-inventario {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+#busqueda-inventario:focus {
+    /* width: 320px;  <-- ELIMINA ESTA LÍNEA */
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 15px rgba(255, 204, 0, 0.1);
+}
+/* Badges de estado */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+/* 4. TABLA TRANSFORMADA A TARJETAS (Distribución Total) */
+.dashboard-table-container { 
+    overflow-x: hidden !important;
+    width: 100% !important; /* Asegura que el contenedor use todo el espacio */
+    padding: 0 !important;
+}
+
+.dashboard-table-container table { 
+    min-width: unset !important; 
+    width: 100% !important; /* Fuerza a la tabla a estirarse */
+    display: block; /* Permite que se comporte como bloque */
+}
+
+#v-balance tbody {
+    display: block;
+    width: 100%;
+}
+
+#v-balance tr.responsive-row {
+    display: block;
+    width: 100% !important; /* La tarjeta ahora cubre todo el ancho */
+    background: var(--card-dark);
+    margin-bottom: 20px; /* Más espacio entre tarjetas para que no se peguen */
+    border: 1px solid var(--border) !important;
+    border-radius: 16px;
+    padding: 15px; /* Más aire interno */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+#v-balance td {
+    display: flex;
+    justify-content: space-between; /* Empuja el título a la izquierda y el dato a la derecha */
+    align-items: center;
+    padding: 12px 0 !important; /* Espaciado vertical entre líneas */
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    width: 100%;
+}
+
+#v-balance td:last-child { border-bottom: none; }
+
+/* Títulos amarillos (Labels) */
+#v-balance td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--accent-yellow);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    text-align: left;
+    flex: 1; /* Toma su espacio sin empujar demasiado */
+}
+
+/* Datos (Valores blancos/colores) */
+#v-balance td > div, 
+#v-balance td > span,
+#v-balance td input {
+    font-size: 1rem !important;
+    text-align: right;
+    flex: 2; /* Le damos más prioridad al dato para que no se corte */
+    display: flex;
+    justify-content: flex-end;
+}
 /* =========================================
    COMPONENTES BENTO (TARJETAS)
    ========================================= */
@@ -150,69 +263,229 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-yellow); 
 /* Modales */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
 .modal-content { background: var(--card-dark); padding: 32px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%; border: 1px solid var(--border); }
+/* =========================================
+   FIX: LOGO ESCRITORIO
+   ========================================= */
+.sidebar-logo {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--white);
+    text-align: center; /* Esto lo centra perfectamente */
+    margin-bottom: 40px;
+    letter-spacing: 2px;
+    width: 100%;
+    display: block;
+}
+.sidebar-logo span { 
+    color: var(--accent-yellow); 
+}
 
 /* =========================================
-   RESPONSIVE
+   RESPONSIVE 
    ========================================= */
-@media (max-width: 1024px) {
-    .bento-grid-stats { grid-template-columns: repeat(2, 1fr); }
-}
+/* =========================================
+   ESTILO MOBILE: ICON RAIL 
+   ========================================= */
 @media (max-width: 768px) {
-    body { overflow-y: auto; height: auto; }
-    #admin-panel { flex-direction: column; height: auto; }
-    
-    /* 1. Barra superior: Ahora permite que los elementos bajen de línea (wrap) */
-    .sidebar { 
-        flex-direction: row; 
-        flex-wrap: wrap; /* LA MAGIA: Si no caben, forman una nueva fila */
-        width: 100%; 
-        max-width: 100%; 
-        padding: 0; 
-        border-right: none; 
-        background: var(--sidebar);
+    /* Base: Evita que el fondo se mueva */
+    body { overflow: hidden; height: 100vh; }
+    #admin-panel { display: flex !important; flex-direction: row; height: 100vh; }
+/* 1. Corregir la cabecera de Insumos para que no desborde */
+    #v-inventario > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 15px !important;
+        margin-bottom: 20px !important;
     }
-    
-    .sidebar h2 { display: none; }
-    
-    /* 2. Los botones se convierten en "Cajitas" tipo App */
-    .nav-item { 
-        flex-direction: column; /* Icono arriba, texto abajo */
-        padding: 12px 5px; 
-        font-size: 0.65rem; 
-        flex: 1 1 30%; /* Ocupan un tercio de la pantalla (3 por fila) */
-        text-align: center; 
-        justify-content: center;
-        border-right: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        white-space: normal; /* Permite que textos largos se acomoden */
+/* 1. FORZAR que desaparezcan las cabeceras viejas en ambas tablas */
+    #v-balance thead, 
+    #v-inventario-real thead { 
+        display: none !important; 
     }
-    
-    .nav-item.active { 
-        border-bottom: 3px solid var(--accent-yellow); 
-        background: rgba(255, 204, 0, 0.05);
-    }
-    
-    /* 3. Contenedor de "Cerrar Sesión" ocupa su propia fila al final */
-    .sidebar > div:last-child {
-        display: flex;
-        width: 100%; 
-        margin-top: 0 !important;
-    }
-    
-    .sidebar > div:last-child .nav-item {
-        flex-direction: row; /* Icono al lado del texto para este botón especial */
-        flex: 1; /* Ocupa todo el ancho de la pantalla */
-        border-right: none;
-        font-size: 0.8rem;
-        padding: 15px;
-    }
-    
-    .main-content { padding: 15px; height: auto; overflow: visible; }
-    .bento-grid-stats { grid-template-columns: 1fr; }
-    .span-2 { grid-column: span 1; }
-    .admin-sarlab-credit { display: none; }
-}
 
+    /* 2. Convertir la tabla de Inventario Central en Tarjetas */
+    #v-inventario-real table,
+    #v-inventario-real tbody,
+    #v-inventario-real tr {
+        display: block;
+        width: 100% !important;
+    }
+
+    #v-inventario-real tbody tr {
+        background: var(--card-dark);
+        margin-bottom: 15px;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px;
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    #v-inventario-real td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center;
+        width: 100% !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    #v-inventario-real td:last-child { 
+        border-bottom: none; 
+    }
+
+    /* 3. Inyectar títulos amarillos (Minimalistas y pequeños) */
+    #v-inventario-real td::before {
+        font-weight: 700;
+        color: var(--accent-yellow);
+        text-transform: uppercase;
+        font-size: 0.65rem; /* Tamaño discreto */
+        text-align: left;
+        flex: 1;
+    }
+    
+    /* Asignamos el nombre correcto a cada línea según su posición */
+    #v-inventario-real td:nth-child(1)::before { content: "Insumo"; }
+    #v-inventario-real td:nth-child(2)::before { content: "Categoría"; }
+    #v-inventario-real td:nth-child(3)::before { content: "Stock"; }
+    #v-inventario-real td:nth-child(4)::before { content: "Medida"; }
+    #v-inventario-real td:nth-child(5)::before { content: "Precio"; }
+    #v-inventario-real td:nth-child(6)::before { content: "Estado"; }
+    #v-inventario-real td:nth-child(7)::before { content: "Acción"; }
+
+    /* 4. Asegurar que los datos blancos NO sean gigantes */
+    #v-inventario-real td > * {
+        font-size: 0.85rem !important; /* Tamaño normal, fácil de leer */
+        text-align: right;
+        flex: 2;
+        margin: 0 !important;
+    }
+    /* 2. Reducir el título principal de la sección */
+    #v-inventario h2 {
+        font-size: 1.3rem !important; /* Tamaño más manejable */
+        line-height: 1.2;
+        width: 100%;
+    }
+
+    /* 3. Reorganizar los botones (Registrar Compra, Cuadre, Merma) */
+    #v-inventario div[style*="display: flex; gap: 10px;"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr); /* Dos columnas de botones */
+        gap: 8px !important;
+        width: 100%;
+    }
+
+    /* 4. Ajustar el tamaño de los botones de cabecera */
+    #v-inventario .btn-action {
+        padding: 12px 8px !important;
+        font-size: 0.7rem !important;
+        height: auto !important;
+        text-align: center;
+        justify-content: center;
+       white-space: nowrap; /* Evita que el texto del botón se parta en dos líneas */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Si el texto no cabe, pone puntos suspensivos elegantemente */
+    }
+
+    /* El tercer botón (Merma) ocupará el ancho completo de la cuadrícula si es necesario */
+    #v-inventario .btn-action:last-child {
+        grid-column: span 2;
+    }
+
+    /* 5. Ajustar el formulario de "Configuración de Ítem" */
+    .form-container {
+        padding: 20px !important;
+        margin-top: 10px;
+    }
+
+    .form-container h3 {
+        font-size: 1.1rem !important;
+    }
+
+    /* Sidebar: Barra lateral de cristal */
+    .sidebar {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+        height: 100vh;
+        background: rgba(15, 17, 21, 0.85) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        position: fixed;
+        left: 0;
+        top: 0;
+        padding: 25px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        z-index: 1000;
+    }
+
+    /* Ocultar elementos de texto */
+    .sidebar h2, .nav-item span { display: none !important; }
+
+    /* Logo Minimalista en móvil */
+    .sidebar-logo {
+        display: block !important;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--accent-yellow);
+        margin-bottom: 35px;
+    }
+
+    /* Items de Navegación */
+    .nav-item {
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 14px;
+        transition: all 0.3s ease;
+        border: none !important;
+        color: var(--text-muted);
+    }
+
+    /* Estado Activo */
+    .nav-item.active {
+        background: var(--accent-yellow) !important;
+        color: #0f1115 !important;
+        box-shadow: 0 8px 20px rgba(255, 204, 0, 0.15);
+    }
+
+    /* Contenido Principal: Ajustado a la derecha */
+    .main-content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+        padding: 20px !important;
+        height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Footer: Logout y Créditos */
+    .sidebar-footer {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding-bottom: 25px;
+    }
+
+    .admin-sarlab-credit {
+        display: block !important;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        opacity: 0.25;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        color: var(--white);
+    }
+}
 /* =========================================
    IMPRESIÓN TICKET
    ========================================= */
