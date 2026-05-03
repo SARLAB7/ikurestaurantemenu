@@ -12,6 +12,7 @@ let menuGlobal = {}, pedidosGlobales = [], insumosGlobales = [], idParaEliminar 
  
 const CORREO_MASTER = "cb01grupo@gmail.com";
 const correosAutorizados = [CORREO_MASTER, "kelly.araujotafur@gmail.com", "jesusmanuelcd10@gmail.com"];
+const ICON_HISTORY = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 const ICON_PREPARE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`;
 const ICON_X = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const ICON_EDIT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
@@ -119,7 +120,6 @@ window.renderListaInsumosBento = () => {
     
     contenedor.innerHTML = html || '<p style="color:var(--text-muted); padding: 20px;">No hay insumos creados aún.</p>';
 };
-// ESTA FUNCIÓN VA AFUERA, SOLA:
 window.renderInventarioTable = () => {
     const tbody = document.getElementById('tabla-inventario-dinamica');
     if (!tbody) return;
@@ -135,25 +135,38 @@ window.renderInventarioTable = () => {
         const statusBadge = esBajoStock 
             ? `<span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.2);">STOCK BAJO</span>`
             : `<span style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(34, 197, 94, 0.2);">SALUDABLE</span>`;
-html += `
-    <tr class="responsive-row">
-        <td data-label="Insumo">
-            <div style="font-weight: 600; color: var(--white);">${insumo.nombre}</div>
+
+       html += `
+    <tr class="responsive-row" style="border-bottom: 1px solid var(--border); transition: background 0.2s;">
+        <td data-label="Insumo" style="padding: 16px 20px;">
+            <div style="font-weight: 600; color: var(--text-main); text-transform: capitalize;">${insumo.nombre}</div>
         </td>
-        <td data-label="Categoría">${insumo.unidad}</td>
-        <td data-label="Stock">
+        <td data-label="Categoría" style="padding: 16px 20px; color: var(--text-muted);">${insumo.unidad}</td>
+        <td data-label="Stock" style="padding: 16px 20px;">
             <input type="number" value="${insumo.stockActual}" 
                    onchange="actualizarStockFisico('${insumo.id}', this.value, ${insumo.stockActual}, '${insumo.nombre}')"
-                   class="table-input-stock">
+                   style="width: 100px; padding: 8px; text-align: center; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: inherit; font-weight: 600; font-family: inherit; outline: none; transition: border-color 0.2s;"
+                   onfocus="this.style.borderColor='#10b981'" 
+                   onblur="this.style.borderColor='var(--border)'">
         </td>
-        <td data-label="U. Medida">${insumo.unidad === 'gramos' ? 'Grs' : insumo.unidad === 'ml' ? 'Ml' : 'Und'}</td>
-        <td data-label="Precio">$${Math.round(insumo.costoUnitario || 0).toLocaleString()}</td>
-        <td data-label="Estado">${statusBadge}</td>
-        <td data-label="Acción">
-            <button onclick="verHistorialInsumo('${insumo.id}', '${insumo.nombre}')" class="btn-historial">🕒</button>
+        <td data-label="U. Medida" style="padding: 16px 20px; color: var(--text-muted); font-size: 0.9rem;">
+            ${insumo.unidad === 'gramos' ? 'Grs' : insumo.unidad === 'ml' ? 'Ml' : 'Und'}
+        </td>
+        <td data-label="Precio" style="padding: 16px 20px; font-weight: 500;">
+            $${Math.round(insumo.costoUnitario || 0).toLocaleString()}
+        </td>
+        <td data-label="Estado" style="padding: 16px 20px;">${statusBadge}</td>
+        <td data-label="Acción" style="padding: 16px 20px;">
+            <button onclick="verHistorialInsumo('${insumo.id}', '${insumo.nombre}')" 
+                    style="background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                    onmouseover="this.style.color='#10b981'; this.style.borderColor='#10b981'; this.style.background='rgba(16, 185, 129, 0.05)'"
+                    onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)'; this.style.background='transparent'"
+                    title="Ver Historial">
+                ${ICON_HISTORY}
+            </button>
         </td>
     </tr>
-`;
+        `;
     });
 
     tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No se encontraron insumos.</td></tr>';
@@ -922,33 +935,72 @@ window.descargarBalanceCSV = () => {
     document.body.removeChild(link);
 };
 // Asegúrate de que estas funciones críticas tengan el prefijo window.
-window.descargarInventarioCSV = () => {
-    if (insumosGlobales.length === 0) {
-        alert("No hay insumos registrados en el inventario.");
+window.descargarInventarioExcel = async () => {
+    // 1. Verificamos que la librería de Excel haya cargado bien
+    if (typeof XLSX === 'undefined') {
+        mostrarNotificacion("Cargando motor de Excel, intenta de nuevo en un segundo.", "error");
         return;
     }
 
-    let csvContent = "Insumo,Unidad de Medida,Stock Actual,Costo Promedio,Estado\n";
-    
-    insumosGlobales.forEach(i => {
-        const esBajo = Number(i.stockActual) <= Number(i.umbralMinimo);
-        const estado = esBajo ? "STOCK BAJO" : "SALUDABLE";
-        
-        // Limpiamos nombres para que Excel no se confunda con comas en el texto
-        const nombreLimpio = i.nombre ? i.nombre.replace(/,/g, '') : '';
-        
-        csvContent += `"${nombreLimpio}","${i.unidad}","${i.stockActual}","${i.costoUnitario}","${estado}"\n`;
-    });
+    if (insumosGlobales.length === 0) {
+        mostrarNotificacion("No hay insumos registrados en el inventario.", "error");
+        return;
+    }
 
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    
-    const fechaActual = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Inventario_Actual_IKU_${fechaActual}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    mostrarNotificacion("Construyendo archivo Excel con historial, un momento...");
+
+    try {
+        // --- HOJA 1: STOCK ACTUAL ---
+        let dataInventario = [
+            ["Insumo", "Unidad de Medida", "Stock Actual", "Costo Promedio", "Estado"]
+        ];
+        
+        insumosGlobales.forEach(i => {
+            const esBajo = Number(i.stockActual) <= Number(i.umbralMinimo);
+            const estado = esBajo ? "STOCK BAJO" : "SALUDABLE";
+            dataInventario.push([i.nombre, i.unidad, i.stockActual, i.costoUnitario, estado]);
+        });
+
+        // --- HOJA 2: HISTORIAL (KARDEX) ---
+        let dataHistorial = [
+            ["Fecha", "Insumo", "Tipo de Movimiento", "Cantidad", "Concepto"]
+        ];
+
+        // Vamos a la base de datos a traer toooooodo el historial ordenado por fecha
+        const snap = await getDocs(query(collection(db, "kardex"), orderBy("timestamp", "desc")));
+        
+        // Creamos un diccionario rápido para saber el nombre del insumo con solo su ID
+        const diccInsumos = {};
+        insumosGlobales.forEach(i => diccInsumos[i.id] = i.nombre);
+
+        snap.forEach(d => {
+            const m = d.data();
+            // Formateamos la fecha bien bonita
+            const fecha = m.timestamp ? m.timestamp.toDate().toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Reciente';
+            const nombre = diccInsumos[m.insumoId] || 'Insumo Eliminado';
+            const tipo = m.tipo === 'entrada' ? 'ENTRADA (+)' : 'SALIDA (-)';
+            
+            dataHistorial.push([fecha, nombre, tipo, m.cantidad, m.concepto]);
+        });
+
+        // --- ARMADO DEL LIBRO EXCEL ---
+        const wb = XLSX.utils.book_new(); // Crea el archivo en blanco
+        
+        // Convierte los datos en hojas y se las pega al archivo
+        const wsInventario = XLSX.utils.aoa_to_sheet(dataInventario);
+        XLSX.utils.book_append_sheet(wb, wsInventario, "Stock Actual");
+
+        const wsHistorial = XLSX.utils.aoa_to_sheet(dataHistorial);
+        XLSX.utils.book_append_sheet(wb, wsHistorial, "Historial de Movimientos");
+
+        // --- DESCARGA ---
+        const fechaActual = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+        XLSX.writeFile(wb, `Reporte_Inventario_IKU_${fechaActual}.xlsx`);
+        
+        mostrarNotificacion("¡Excel descargado con éxito!");
+
+    } catch (error) {
+        console.error("Error al generar Excel:", error);
+        mostrarNotificacion("Hubo un error al crear el archivo Excel.", "error");
+    }
 };
