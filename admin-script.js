@@ -529,7 +529,7 @@ function escucharCarta() {
         const list = document.getElementById('inv-list'); if (!list) return;
 const cats = { 
     diario: { titulo: "Menú del Día", platos: [] }, 
-    almuerzo: { titulo: "Almuerzos", platos: [] }, // <-- AHORA ES INDEPENDIENTE
+    almuerzo: { titulo: "Almuerzos", platos: [] }, 
     desayuno: { titulo: "Desayunos", platos: [] }, 
     especial: { titulo: "Especiales", platos: [] }, 
     asado: { titulo: "Asados", platos: [] }, 
@@ -649,8 +649,22 @@ window.eliminarInsumoModal = (id) => { idParaEliminar = "INSUMO:" + id; document
 window.editarPlato = (id, n, p, c, d, i, recetaJson) => { document.getElementById('edit-id').value = id; document.getElementById('name').value = decodeURIComponent(n); document.getElementById('price').value = p; document.getElementById('category').value = c; document.getElementById('desc').value = decodeURIComponent(d); document.getElementById('ingredients').value = i; document.getElementById('f-title').innerText = "Editando Plato"; document.getElementById('btn-cancelar').style.display = 'block'; const recetaItems = document.getElementById('receta-items'); recetaItems.innerHTML = ''; const receta = JSON.parse(decodeURIComponent(recetaJson || '{}')); Object.entries(receta).forEach(([insId, cant]) => agregarFilaReceta(insId, cant)); };
 window.cancelarEdicion = () => { document.getElementById('m-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('receta-items').innerHTML = ''; document.getElementById('f-title').innerText = "Configurar Plato"; document.getElementById('btn-cancelar').style.display = 'none'; };
 window.eliminarPlatoModal = (id) => { idParaEliminar = id; document.getElementById('modal-title').innerText = '¿Borrar plato?'; document.getElementById('delete-modal').style.display = 'flex'; };
-window.toggleCategoria = (listaId, chevronId) => { const l = document.getElementById(listaId), c = document.getElementById(chevronId); if(l) { l.classList.toggle('lista-categoria-oculta'); !l.classList.contains('lista-categoria-oculta') ? categoriasAbiertas.add(listaId) : categoriasAbiertas.delete(listaId); } if(c) c.style.transform = l.classList.contains('lista-categoria-oculta') ? 'rotate(0deg)' : 'rotate(180deg)'; };
-window.actualizarSelectoresInsumos = () => { const opts = insumosGlobales.map(i => `<option value="${i.id}">${i.nombre}</option>`).join(''); document.getElementById('compra-insumo').innerHTML = opts; document.getElementById('merma-insumo').innerHTML = opts; };
+window.toggleCategoria = (listaId, chevronId) => { 
+    const l = document.getElementById(listaId);
+    const c = document.getElementById(chevronId); 
+    if(l) { 
+        l.classList.toggle('lista-categoria-oculta'); 
+        !l.classList.contains('lista-categoria-oculta') ? categoriasAbiertas.add(listaId) : categoriasAbiertas.delete(listaId); 
+    } 
+    if(c) c.style.transform = l.classList.contains('lista-categoria-oculta') ? 'rotate(0deg)' : 'rotate(180deg)'; 
+};
+window.actualizarSelectoresInsumos = () => { 
+    const opts = insumosGlobales.map(i => `<option value="${i.id}">${i.nombre}</option>`).join(''); 
+    const selCompra = document.getElementById('compra-insumo');
+    const selMerma = document.getElementById('merma-insumo');
+    if(selCompra) selCompra.innerHTML = opts; 
+    if(selMerma) selMerma.innerHTML = opts; 
+};
 window.abrirModalCompra = () => { window.actualizarSelectoresInsumos(); document.getElementById('modal-compra').style.display = 'flex'; };
 window.abrirModalMerma = () => { window.actualizarSelectoresInsumos(); document.getElementById('modal-merma').style.display = 'flex'; };
 window.cerrarModales = () => { 
