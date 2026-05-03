@@ -165,54 +165,179 @@ body, #admin-panel, .main-content {
     box-shadow: 0 8px 20px rgba(136, 201, 188, 0.2);
     transform: translateY(-2px);
 }
-/* =========================================
-   LAYOUT PRINCIPAL (AQUÍ ESTÁ LA MAGIA)
-   ========================================= */
-#admin-panel { display: flex; width: 100vw; height: 100vh; }
-
-/* Sidebar Blindada */
-.sidebar { 
-    width: 260px; 
-    min-width: 260px; 
-    max-width: 260px; /* Impide que crezca o encoja */
-    flex-shrink: 0;   
-    background: var(--bg-sidebar);    display: flex; 
-    flex-direction: column; 
-    padding: 24px 0; 
-    z-index: 100; 
-    border-right: 1px solid var(--border); 
-    overflow-x: hidden; /* Corta cualquier texto que intente salirse */
+.card-bento button:hover {
+    background: var(--accent-yellow) !important;
+    color: #000 !important;
+    transform: scale(1.1);
+    transition: all 0.2s ease;
 }
-.sidebar h2 { color: var(--white); text-align: center; margin-bottom: 40px; letter-spacing: 2px; font-weight: 800; }
-.sidebar h2 span { color: var(--accent-yellow); }
 
-.nav-item { 
-    width: 100%;
-    padding: 14px 24px; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    gap: 12px; 
-    transition: 0.3s; 
-    color: var(--text-muted); 
-    font-weight: 500; 
-    white-space: nowrap; 
+/* Para que en modo oscuro el botón del reloj no se pierda */
+[data-theme="dark"] .card-bento button {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* =========================================
+   LAYOUT PRINCIPAL: ESTRUCTURA FLOTANTE
+   ========================================= */
+
+#admin-panel { 
+    display: flex !important; 
+    width: 100vw; 
+    height: 100vh; 
+    background: var(--bg-main);
     overflow: hidden;
 }
-.nav-item:hover, .nav-item.active { background: rgba(255, 204, 0, 0.1); color: var(--accent-yellow); border-right: 3px solid var(--accent-yellow); }
-.nav-icon { width: 20px; height: 20px; min-width: 20px; flex-shrink: 0; }
+/* SIDEBAR: ICON RAIL FLOTANTE */
+.sidebar { 
+    width: 85px !important; 
+    min-width: 85px !important;
+    height: calc(100vh - 40px);
+    margin: 20px;
+    background: var(--bg-sidebar) !important;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    padding: 30px 0; 
+    z-index: 1000; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
 
+/* Ocultar textos innecesarios para el minimalismo */
+.sidebar .nav-text, 
+.sidebar span, 
+.sidebar-logo {
+    display: none !important;
+}
+
+/* LOGO SUPERIOR */
+.sidebar-logo-rail {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+    margin-bottom: 40px;
+    letter-spacing: -1px;
+    cursor: default;
+}
+
+/* CONTENEDOR DE ICONOS */
+.nav-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+/* ITEMS DE NAVEGACIÓN E INTERACTIVIDAD */
+.nav-item { 
+    width: 50px;
+    height: 50px;
+    padding: 0 !important;
+    border-radius: 16px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    color: var(--text-muted); 
+    border: none !important;
+    position: relative; /* Necesario para el tooltip */
+    cursor: pointer;
+}
+
+/* Efecto Hover: ¡Restaurado! */
+.nav-item:hover:not(.active) {
+    background: var(--input-bg);
+    color: var(--accent-yellow);
+    transform: translateX(5px); /* Pequeño salto a la derecha */
+}
+
+/* Estado Activo */
+.nav-item.active { 
+    background: var(--accent-yellow) !important; 
+    color: #053931 !important; 
+    box-shadow: 0 8px 15px rgba(72, 168, 154, 0.3);
+}
+
+/* TOOLTIPS: LOS TÍTULOS AL PASAR EL MOUSE */
+.nav-item::after {
+    content: attr(title); 
+    position: absolute;
+    left: 65px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.nav-item:hover::after {
+    opacity: 1;
+    left: 75px; /* Se desliza suavemente al aparecer */
+}
+
+/* =========================================
+   INTERRUPTOR DE TEMA (MODO NOCHE)
+   ========================================= */
+.sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.theme-switch-rail {
+    width: 32px;
+    height: 60px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    position: relative;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.theme-switch-handle {
+    width: 24px;
+    height: 24px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    position: absolute;
+    top: 4px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+[data-theme="dark"] .theme-switch-handle {
+    transform: translateY(28px);
+    background: #000;
+}
+
+/* CONTENIDO PRINCIPAL: AJUSTE PARA NO TRASLAPAR */
+.main-content { 
+    flex: 1; 
+    padding: 40px; 
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg-main) !important;
+}
 .admin-sarlab-credit { padding: 20px 24px 0; font-size: 0.75rem; color: var(--text-muted); }
 .admin-sarlab-credit strong { color: var(--white); }
 
-/* Contenido Principal Protegido */
-.main-content { 
-    flex: 1; 
-    min-width: 0; /* Evita que el contenido empuje la barra lateral */
-    padding: 40px; 
-    overflow-y: auto; 
-    height: 100vh; 
-}
+
 .view-section { display: none; animation: fadeIn 0.4s ease; }
 .view-section.active { display: block; }
 
@@ -555,304 +680,174 @@ button[onclick="abrirModalMerma()"]:hover {
 .sidebar-logo span { 
     color: var(--accent-yellow); 
 }
-
-/* =========================================
-   RESPONSIVE 
-   ========================================= */
-
-@media (max-width: 768px) {
-    /* 1. Sidebar Dinámica y Limpia */
-    .sidebar {
-        width: 70px !important;
-        min-width: 70px !important;
-        max-width: 70px !important;
-        height: 100vh;
-        /* Usamos la variable para que cambie de color automáticamente */
-        background: var(--bg-sidebar) !important; 
-        position: fixed;
-        left: 0;
-        top: 0;
-        padding: 25px 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border-right: 1px solid var(--border);
-        z-index: 1000;
-        /* Quitamos el desenfoque excesivo para que se vea más nítido */
-        backdrop-filter: none; 
-        transition: background 0.3s ease; 
-    }
-
-    /* 2. Item Activo: Sin resplandores "sucios" */
-  .nav-item.active {
-    background-color: var(--accent-yellow) !important;
-    color: #053931 !important; /* Verde profundo para máximo contraste */
-    /* ELIMINAMOS cualquier sombra o resplandor amarillo */
-    box-shadow: none !important; 
-    border-radius: 12px !important; /* Bordes más cuadrados y serios */
-    opacity: 1;
+/* Estilos para el botón de Historial (Kardex) en la tabla de inventario */
+.btn-historial {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    width: max-content; /* Evita que se estire a lo ancho */
+    margin-left: auto; /* Lo empuja a la derecha en modo móvil */
 }
 
-    .nav-item.active svg {
-    stroke: #053931 !important; /* Icono oscuro sobre menta */
-}
-
-    /* Ajuste para los iconos apagados */
-    .nav-item {
-        color: var(--text-muted) !important;
-        opacity: 0.8;
-        transition: all 0.2s ease;
-    }
+.btn-historial:hover {
+    background: var(--bg-card);
+    border-color: var(--accent-yellow);
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(72, 168, 154, 0.2);
 }
 /* =========================================
-   ESTILO MOBILE: ICON RAIL 
+  RESPONSIVE
    ========================================= */
 @media (max-width: 768px) {
-    /* Base: Evita que el fondo se mueva */
+    /* 1. Base y Layout */
     body { overflow: hidden; height: 100vh; }
     #admin-panel { display: flex !important; flex-direction: row; height: 100vh; }
-/* 1. Corregir la cabecera de Insumos para que no desborde */
-    #v-inventario > div:first-child {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 15px !important;
-        margin-bottom: 20px !important;
-    }
-/* 1. FORZAR que desaparezcan las cabeceras viejas en ambas tablas */
-    #v-balance thead, 
-    #v-inventario-real thead { 
-        display: none !important; 
-    }
 
-    /* 2. Convertir la tabla de Inventario Central en Tarjetas */
-    #v-inventario-real table,
-    #v-inventario-real tbody,
-    #v-inventario-real tr {
-        display: block;
-        width: 100% !important;
-    }
-
-    #v-inventario-real tbody tr {
-        background: var(--card-dark);
-        margin-bottom: 15px;
-        border: 1px solid var(--border) !important;
-        border-radius: 16px;
-        padding: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-
-    #v-inventario-real td {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center;
-        width: 100% !important;
-        padding: 10px 0 !important;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+    /* 2. Sidebar Flotante de Cristal */
+    .sidebar {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 20px 0 !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        z-index: 1000 !important;
+        background: var(--bg-sidebar) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-right: 1px solid var(--border);
+        border-radius: 0 24px 24px 0 !important; /* Se ancla a la izquierda */
     }
     
-    #v-inventario-real td:last-child { 
-        border-bottom: none; 
+    .sidebar h2, .nav-item span, .sidebar-logo { display: none !important; }
+    .nav-item::after { display: none !important; } /* Matar tooltips fantasma */
+    
+    /* Logo SL y Botones en móvil */
+    .sidebar-logo-rail { font-size: 1.1rem !important; margin-bottom: 30px !important; }
+    .nav-item { width: 42px !important; height: 42px !important; margin-bottom: 12px !important; }
+
+    /* 3. Main Content: Matemáticamente exacto */
+    .main-content {
+        margin-left: 60px !important;
+        width: calc(100vw - 60px) !important;
+        padding: 20px 15px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
-    /* 3. Inyectar títulos amarillos (Minimalistas y pequeños) */
-    #v-inventario-real td::before {
+    /* ==============================================
+       4. FIX: DES-APRETAR ELEMENTOS (Columnas 100%)
+       ============================================== */
+    /* Cabeceras, filtros y formularios pasan a columna vertical */
+    .view-section > div[style*="display: flex"],
+    header[style*="display: flex"],
+    #v-inventario > div:first-child,
+    .form-container div[style*="display:flex"],
+    .form-container div[style*="display: flex"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 15px !important;
+        height: auto !important;
+        width: 100% !important;
+    }
+
+    /* Envolturas internas de botones */
+    .view-section > div[style*="display: flex"] > div,
+    header[style*="display: flex"] > div {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    /* Inputs, Selects y Botones ocupan todo el ancho (Evita cortes) */
+    #filtro-balance, #busqueda-inventario, #periodo-selector,
+    .view-section header button, .btn-action,
+    .form-container input, .form-container select {
+        width: 100% !important;
+        margin: 0 0 8px 0 !important;
+        box-sizing: border-box !important;
+        height: auto !important;
+        white-space: normal !important;
+    }
+    
+    .form-container { padding: 20px 15px !important; }
+
+    /* Forzar tarjetas de métricas a 1 columna (Evita letras montadas) */
+    div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+    /* ==============================================
+       5. FIX: TABLAS A TARJETAS LATERALES
+       ============================================== */
+    thead, #v-balance thead, #v-inventario-real thead { display: none !important; }
+
+    .dashboard-table-container table,
+    #v-inventario-real table, #v-inventario-real tbody, #v-inventario-real tr,
+    #v-balance tbody, #v-balance tr.responsive-row {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .responsive-row {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        margin-bottom: 15px !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+        box-sizing: border-box !important;
+    }
+
+    .responsive-row td, #v-inventario-real td, #v-balance td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px solid var(--border) !important;
+        text-align: right !important;
+        box-sizing: border-box !important;
+    }
+
+    .responsive-row td:last-child, #v-inventario-real td:last-child, #v-balance td:last-child {
+        border-bottom: none !important;
+    }
+
+    /* Inyección de Títulos Amarillos */
+    .responsive-row td::before, #v-inventario-real td::before, #v-balance td::before {
+        content: attr(data-label); /* ← ¡Recuerda que esto viene de admin-script.js! */
         font-weight: 700;
         color: var(--accent-yellow);
         text-transform: uppercase;
-        font-size: 0.65rem; /* Tamaño discreto */
-        text-align: left;
+        font-size: 0.7rem;
         flex: 1;
+        text-align: left;
+        padding-right: 10px;
     }
-    
-    /* Asignamos el nombre correcto a cada línea según su posición */
-    #v-inventario-real td:nth-child(1)::before { content: "Insumo"; }
-    #v-inventario-real td:nth-child(2)::before { content: "Categoría"; }
-    #v-inventario-real td:nth-child(3)::before { content: "Stock"; }
-    #v-inventario-real td:nth-child(4)::before { content: "Medida"; }
-    #v-inventario-real td:nth-child(5)::before { content: "Precio"; }
-    #v-inventario-real td:nth-child(6)::before { content: "Estado"; }
-    #v-inventario-real td:nth-child(7)::before { content: "Acción"; }
 
-    /* 4. Asegurar que los datos blancos NO sean gigantes */
-    #v-inventario-real td > * {
-        font-size: 0.85rem !important; /* Tamaño normal, fácil de leer */
-        text-align: right;
-        flex: 2;
+    /* Datos a la derecha */
+    .responsive-row td > *, #v-inventario-real td > *, #v-balance td > * {
+        flex: 1.5;
+        display: flex;
+        justify-content: flex-end;
+        word-break: break-word; /* Evita desbordamientos */
+        font-size: 0.9rem !important;
         margin: 0 !important;
-    }
-    /* 2. Reducir el título principal de la sección */
-    #v-inventario h2 {
-        font-size: 1.3rem !important; /* Tamaño más manejable */
-        line-height: 1.2;
-        width: 100%;
-    }
-
-    /* 3. Reorganizar los botones (Registrar Compra, Cuadre, Merma) */
-    #v-inventario div[style*="display: flex; gap: 10px;"] {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr); /* Dos columnas de botones */
-        gap: 8px !important;
-        width: 100%;
-    }
-
-    /* 4. Ajustar el tamaño de los botones de cabecera */
-    #v-inventario .btn-action {
-        padding: 12px 8px !important;
-        font-size: 0.7rem !important;
-        height: auto !important;
-        text-align: center;
-        justify-content: center;
-       white-space: nowrap; /* Evita que el texto del botón se parta en dos líneas */
-    overflow: hidden;
-    text-overflow: ellipsis; /* Si el texto no cabe, pone puntos suspensivos elegantemente */
-    }
-
-    /* El tercer botón (Merma) ocupará el ancho completo de la cuadrícula si es necesario */
-    #v-inventario .btn-action:last-child {
-        grid-column: span 2;
-    }
-
-    /* 5. Ajustar el formulario de "Configuración de Ítem" */
-   .form-container, .stat-card {
-    overflow: hidden; /* Evita que las letras se salgan */
-    display: flex;
-    flex-direction: column;
-}
-    .form-container {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    padding: 24px !important;
-    border-radius: 20px;
-    width: 100%;
-}
-   .form-container input, .form-container select {
-    width: 100% !important;
-    max-width: 100%;
-    margin-bottom: 8px;
-    padding: 12px !important;
-    border-radius: 12px !important;
-    box-sizing: border-box; /* Crucial para que el padding no sume al ancho */
-}
-    .form-container h3 {
-        font-size: 1.1rem !important;
-    }
-
-    /* Sidebar: Barra lateral de cristal */
-    .sidebar {
-    width: 70px !important;
-    min-width: 70px !important;
-    max-width: 70px !important;
-    height: 100vh;
-    /* QUITAMOS el rgba oscuro fijo y usamos la variable dinámica */
-    background: var(--bg-sidebar) !important; 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    position: fixed;
-    left: 0;
-    top: 0;
-    padding: 25px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-right: 1px solid var(--border);
-    z-index: 1000;
-    transition: background 0.3s ease;
-}
-
-    /* Ocultar elementos de texto */
-    .sidebar h2, .nav-item span { display: none !important; }
-
-    /* Logo Minimalista en móvil */
-    .sidebar-logo {
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        width: 45px !important; /* Un poco más grande para las dos letras */
-        height: 45px !important;
-        background: var(--input-bg); /* Fondo sutil que cambia con el tema */
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        margin: 0 auto 35px auto !important;
-        color: var(--accent-yellow); /* Color menta característico */
-        font-weight: 800;
-        letter-spacing: -1px; /* Junta un poco las letras para estilo moderno */
-        position: relative;
-    }
-
-    /* Inyectamos las iniciales SL y ocultamos el texto original */
-    .sidebar-logo {
-        font-size: 0 !important; /* Oculta el texto SARLAB original */
-    }
-
-    .sidebar-logo::before {
-        content: 'SL';
-        font-size: 1.1rem !important; /* Tamaño perfecto para las iniciales */
-        letter-spacing: 0;
-        display: block;
-    }
-
-    /* Quitamos cualquier resplandor o sombra del logo para que se vea limpio */
-    .sidebar-logo {
-        box-shadow: none !important;
-    }
-
-
-    /* Items de Navegación */
-    .nav-item {
-        width: 48px;
-        height: 48px;
-        padding: 0;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 14px;
-        transition: all 0.3s ease;
-        border: none !important;
-        color: var(--text-muted);
-    }
-
-    /* Estado Activo */
-    .nav-item.active {
-    background-color: var(--accent-yellow) !important;
-    color: #053931 !important; /* Verde profundo para máximo contraste */
-    /* ELIMINAMOS cualquier sombra o resplandor amarillo */
-    box-shadow: none !important; 
-    border-radius: 12px !important; /* Bordes más cuadrados y serios */
-    opacity: 1;
-}
-
-    /* Contenido Principal: Ajustado a la derecha */
-    .main-content {
-        margin-left: 70px;
-        width: calc(100% - 70px);
-        padding: 20px !important;
-        height: 100vh;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Footer: Logout y Créditos */
-    .sidebar-footer {
-        margin-top: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        padding-bottom: 25px;
-    }
-
-    .admin-sarlab-credit {
-        display: block !important;
-        font-size: 0.55rem;
-        font-weight: 800;
-        letter-spacing: 2px;
-        opacity: 0.25;
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
-        color: var(--white);
+        text-align: right;
     }
 }
+
 /* =========================================
    IMPRESIÓN TICKET
    ========================================= */
