@@ -524,7 +524,16 @@ async function procesarDescuentoStock(pedidoId) {
 function escucharCarta() {
     onSnapshot(collection(db, "platos"), (snap) => {
         const list = document.getElementById('inv-list'); if (!list) return;
-        const cats = { diario: { titulo: "Menú del Día", almuerzo: { titulo: "Almuerzos", platos: [] }, platos: [] }, desayuno: { titulo: "Desayunos", platos: [] }, especial: { titulo: "Especiales", platos: [] }, asado: { titulo: "Asados", platos: [] }, rapida: { titulo: "Comida Rápida", platos: [] }, bebida: { titulo: "Bebidas", platos: [] }, otros: { titulo: "Otros", platos: [] } };
+const cats = { 
+    diario: { titulo: "Menú del Día", platos: [] }, 
+    almuerzo: { titulo: "Almuerzos", platos: [] }, // <-- AHORA ES INDEPENDIENTE
+    desayuno: { titulo: "Desayunos", platos: [] }, 
+    especial: { titulo: "Especiales", platos: [] }, 
+    asado: { titulo: "Asados", platos: [] }, 
+    rapida: { titulo: "Comida Rápida", platos: [] }, 
+    bebida: { titulo: "Bebidas", platos: [] }, 
+    otros: { titulo: "Otros", platos: [] } 
+};        
         snap.forEach(d => {
             const it = d.data(); it.id = d.id; menuGlobal[it.nombre] = it;
             if (cats[it.categoria]) cats[it.categoria].platos.push(it); else cats['otros'].platos.push(it);
