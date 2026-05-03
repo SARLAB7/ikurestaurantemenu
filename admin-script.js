@@ -101,13 +101,20 @@ window.renderListaInsumosBento = () => {
     
     let html = '';
     insumosGlobales.forEach(i => {
-        // Verificamos si el stock es menor o igual al mínimo para poner la tarjeta en rojo
         const esBajo = Number(i.stockActual) <= Number(i.umbralMinimo);
         
         html += `
             <div class="card-bento ${esBajo ? 'card-danger' : ''}" 
-                 onclick="editarInsumo('${i.id}', '${encodeURIComponent(i.nombre)}', ${i.stockActual}, '${i.unidad}', ${i.umbralMinimo}, ${i.costoUnitario}, ${i.factor})"
-                 style="cursor: pointer;">
+                 style="position: relative; cursor: pointer;"
+                 onclick="editarInsumo('${i.id}', '${encodeURIComponent(i.nombre)}', ${i.stockActual}, '${i.unidad}', ${i.umbralMinimo}, ${i.costoUnitario}, ${i.factor})">
+                
+                <!-- BOTÓN DE HISTORIAL DIRECTO -->
+                <button onclick="event.stopPropagation(); verHistorialInsumo('${i.id}', '${i.nombre}')" 
+                        title="Ver Historial"
+                        style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 8px; padding: 5px; cursor: pointer; color: var(--text-main); z-index: 10;">
+                    🕒
+                </button>
+
                 <div class="card-label">${i.nombre}</div>
                 <div class="big-number-small">
                     ${i.stockActual} 
@@ -135,32 +142,25 @@ window.renderInventarioTable = () => {
         const statusBadge = esBajoStock 
             ? `<span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.2);">STOCK BAJO</span>`
             : `<span style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(34, 197, 94, 0.2);">SALUDABLE</span>`;
-
-        html += `
-            <tr class="row-hover" style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 16px 20px;">
-                    <div style="font-weight: 600; color: var(--white);">${insumo.nombre}</div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted); font-family: monospace;">SKU-${insumo.id.substring(0,6).toUpperCase()}</div>
-                </td>
-                <td style="padding: 16px 20px; color: var(--text-muted); text-transform: capitalize;">${insumo.unidad}</td>
-                <td style="padding: 16px 20px; text-align: center;">
-                    <input type="number" 
-                        value="${insumo.stockActual}" 
-                        onchange="actualizarStockFisico('${insumo.id}', this.value, ${insumo.stockActual}, '${insumo.nombre}')"
-                        style="background: #0f1115; border: 1px solid var(--border); color: var(--accent-yellow); text-align: center; width: 75px; padding: 5px; border-radius: 8px; font-weight: 800; margin-bottom: 0;">
-                </td>
-                <td style="padding: 16px 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
-                    ${insumo.unidad === 'gramos' ? 'Grs' : insumo.unidad === 'ml' ? 'Ml' : 'Und'}
-                </td>
-                <td style="padding: 16px 20px; color: var(--white); font-weight: 500;">
-                    $${Math.round(insumo.costoUnitario || 0).toLocaleString()}
-                </td>
-                <td style="padding: 16px 20px; text-align: center;">${statusBadge}</td>
-                <td style="padding: 16px 20px; text-align: right;">
-                    <button onclick="verHistorialInsumo('${insumo.id}', '${insumo.nombre}')" style="background: none; border: none; color: var(--accent-yellow); cursor: pointer; font-size: 1.1rem; opacity: 0.6; transition: 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">🕒</button>
-                </td>
-            </tr>
-        `;
+html += `
+    <tr class="responsive-row">
+        <td data-label="Insumo">
+            <div style="font-weight: 600; color: var(--white);">${insumo.nombre}</div>
+        </td>
+        <td data-label="Categoría">${insumo.unidad}</td>
+        <td data-label="Stock">
+            <input type="number" value="${insumo.stockActual}" 
+                   onchange="actualizarStockFisico('${insumo.id}', this.value, ${insumo.stockActual}, '${insumo.nombre}')"
+                   class="table-input-stock">
+        </td>
+        <td data-label="U. Medida">${insumo.unidad === 'gramos' ? 'Grs' : insumo.unidad === 'ml' ? 'Ml' : 'Und'}</td>
+        <td data-label="Precio">$${Math.round(insumo.costoUnitario || 0).toLocaleString()}</td>
+        <td data-label="Estado">${statusBadge}</td>
+        <td data-label="Acción">
+            <button onclick="verHistorialInsumo('${insumo.id}', '${insumo.nombre}')" class="btn-historial">🕒</button>
+        </td>
+    </tr>
+`;
     });
 
     tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No se encontraron insumos.</td></tr>';
@@ -396,18 +396,8 @@ window.calcularCostoCompra = () => {
     const cant = Number(inputCantCompra.value);
     
     if (insumo && cant > 0) {
-        let costoGuardado = Number(insumo.costoUnitario) || 0;
-        let factor = Number(insumo.factor) || 1;
-        
-        let costoPorEmpaque;
-        // MAGIA: Si el costo guardado es muy alto (ej. 20000), el sistema sabe que es el precio 
-        // del empaque completo. Si es bajito (ej. 40), sabe que es el precio por gramo.
-        if (costoGuardado > 500 && factor > 1) {
-            costoPorEmpaque = costoGuardado; 
-        } else {
-            costoPorEmpaque = costoGuardado * factor;
-        }
-        
+        // Ahora respeta el precio del empaque completo (Ej: 10000)
+        let costoPorEmpaque = Number(insumo.costoUnitario) || 0;
         const costoTotalEstimado = costoPorEmpaque * cant;
         inputCostoCompra.value = Math.round(costoTotalEstimado); 
     } else {
@@ -433,8 +423,12 @@ if (formCompra) {
 
         const datosInsumo = insumosGlobales.find(i => i.id === idInsumo);
         const contenidoPorEmpaque = Number(datosInsumo.factor) || 1;
+        
+        // Cantidad que va a sumar al stock (Ej: 1 paquete * 1000 = 1000 gramos al inventario)
         const cantidadTotalIngresada = paquetesRecibidos * contenidoPorEmpaque;
-        const nuevoCostoUnitario = inversionTotal / cantidadTotalIngresada;
+        
+        // EL FIX: Guardar el costo por EMPAQUE (Ej: 10000), no por gramo
+        const nuevoCostoPorEmpaque = inversionTotal / paquetesRecibidos;
 
         let conceptoCompra = `Compra de ${paquetesRecibidos} empaque(s) de ${datosInsumo.nombre}`;
         if (diasCaducidad) {
@@ -446,7 +440,7 @@ if (formCompra) {
         try {
             await updateDoc(doc(db, "inventario", idInsumo), {
                 stockActual: increment(cantidadTotalIngresada),
-                costoUnitario: nuevoCostoUnitario
+                costoUnitario: nuevoCostoPorEmpaque // <-- ¡Aquí está el ajuste!
             });
             await addDoc(collection(db, "kardex"), {
                 insumoId: idInsumo, tipo: 'entrada', concepto: conceptoCompra, cantidad: cantidadTotalIngresada, costoReferencia: inversionTotal, timestamp: serverTimestamp()
@@ -485,8 +479,7 @@ window.verHistorialInsumo = async (id, nombre) => {
     tablaBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Consultando...</td></tr>';
 
     try {
-        const q = query(collection(db, "kardex"), where("insumoId", "==", id), orderBy("timestamp", "desc"), limit(20));
-        const snap = await getDocs(q);
+const q = query(collection(db, "kardex"), where("insumoId", "==", id), limit(20));        const snap = await getDocs(q);
         let rows = '';
         snap.forEach(d => {
             const m = d.data();
@@ -823,7 +816,7 @@ window.abrirSeccionBalance = async () => {
     } else if (filtro === 'mes') {
         fechaInicio.setDate(1); // Día 1 de este mes
     } else if (filtro === 'todo') {
-        fechaInicio = new Date(2020, 0, 1); // Desde que inició el mundo IKU
+        fechaInicio = new Date(2020, 0, 1); 
     }
     
     try {
