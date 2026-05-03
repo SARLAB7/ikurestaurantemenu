@@ -550,6 +550,9 @@ function escucharCarta() {
 document.getElementById('m-form').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
     const receta = {};
     document.querySelectorAll('.fila-receta').forEach(fila => {
         const insId = fila.querySelector('.receta-insumo').value;
@@ -567,15 +570,22 @@ document.getElementById('m-form').onsubmit = async (e) => {
         timestamp: serverTimestamp() 
     };
     
-    if(!id) datos.disponible = true;
-    
     try {
-        id ? await updateDoc(doc(doc(db, "platos", id)), datos) : await addDoc(collection(db, "platos"), datos);
-        mostrarNotificacion("Plato guardado con éxito");
-        window.cancelarEdicion();
+        if (id) {
+            // CORRECCIÓN: Quitamos el doc(doc(...)) que sobraba
+            await updateDoc(doc(db, "platos", id), datos);
+            mostrarNotificacion("Plato actualizado con éxito");
+        } else {
+            datos.disponible = true;
+            await addDoc(collection(db, "platos"), datos);
+            mostrarNotificacion("Plato creado con éxito");
+        }
+        window.cancelarEdicion(); // Limpia y cierra automáticamente
     } catch (error) {
-        console.error(error);
+        console.error("Error al guardar plato:", error);
         mostrarNotificacion("Error al guardar el plato", "error");
+    } finally {
+        btn.disabled = false;
     }
 };
 
