@@ -121,39 +121,6 @@
                     </div>
                 </div>
             </section>
-<!-- SECCIÓN BALANCE (CUADRE DIARIO) -->
-<section id="v-balance" class="view-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h2>Cuadre de Inventario</h2>
-        <div style="display: flex; gap: 10px;">
-            <select id="filtro-balance" onchange="abrirSeccionBalance()" style="width: auto; margin-bottom: 0;">
-                <option value="hoy">Hoy</option>
-                <option value="ayer">Ayer</option>
-                <option value="semana">Últimos 7 días</option>
-                <option value="todo">Todo el historial</option>
-            </select>
-<button 
-    onclick="cambiarVista('v-inventario', document.querySelector('[onclick*=\'v-inventario\']'))" 
-    class="btn-action btn-outline" 
-    style="width: auto; padding: 10px 25px;">
-    Volver
-</button>
-        </div>
-    </div>
-    <div class="dashboard-table-container" style="background: var(--card-dark); border: 1px solid var(--border); border-radius: 16px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="color: var(--accent-yellow); border-bottom: 1px solid var(--border);">
-                    <th style="padding: 16px;">Insumo</th>
-                    <th style="padding: 16px; text-align: center;">Entradas (+)</th>
-                    <th style="padding: 16px; text-align: center;">Salidas (-)</th>
-                    <th style="padding: 16px; text-align: right;">Stock Final</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-balance-seccion"></tbody>
-        </table>
-    </div>
-</section>
             <!-- SECCIÓN CARTA -->
             <section id="v-carta" class="view-section">
                 <div style="display: flex; gap: 30px; flex-wrap: wrap-reverse;">
@@ -196,13 +163,13 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN MESAS (RESTAURADA) -->
+            <!-- SECCIÓN MESAS  -->
             <section id="v-mesas" class="view-section">
                 <h3 style="margin-bottom: 24px;">Plano de Mesas</h3>
                 <div id="grid-mesas" class="mesas-container"></div>
             </section>
 
-            <!-- SECCIÓN MÉTRICAS (RESTAURADA) -->
+            <!-- SECCIÓN MÉTRICAS -->
             <section id="v-stats" class="view-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                     <h3 style="margin: 0;">Métricas de Negocio</h3>
@@ -231,162 +198,146 @@
                         <div id="rankings-rechazados" style="color: var(--white);"></div>
                     </div>
                 </div>
-              <div id="master-tools" style="display:none; margin-top: 40px; padding-top: 20px; border-top: 2px dashed #ef4444;">
-    <button onclick="confirmarReinicioTotal()" class="btn-action" style="background: #ef4444; color: white; width: 100%; font-weight: bold;">
-        ⚠️ REINICIAR SISTEMA (BORRAR TODO: CARTA, INVENTARIO Y VENTAS)
-    </button>
-</div>
+                <div id="master-tools" style="display:none; margin-top: 40px; padding-top: 20px; border-top: 2px dashed #ef4444;">
+                    <button onclick="confirmarReinicioTotal()" class="btn-action" style="background: #ef4444; color: white; width: 100%; font-weight: bold;">
+                        ⚠️ REINICIAR SISTEMA (BORRAR TODO)
+                    </button>
+                </div>
             </section>
 
-            <!-- SECCIÓN INVENTARIO AVANZADO  -->
+            <!-- SECCIÓN CONFIGURACIÓN DE INSUMOS -->
             <section id="v-inventario" class="view-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; width: 100%;"> 
-                    <h2>Control de Bodega Avanzado</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;"> 
+                    <h2>Configuración de Bodega</h2>
                     <div style="display: flex; gap: 10px;">
                         <button onclick="abrirModalCompra()" class="btn-action btn-primary">+ Registrar Compra</button>
-                        <button onclick="abrirSeccionBalance()" class="btn-action btn-outline" style="color: var(--accent-yellow); border-color: var(--accent-yellow);">📊 Cuadre de Inventario Hoy</button>
                         <button onclick="abrirModalMerma()" class="btn-action btn-outline" style="color:#ef4444; border-color:#ef4444;">⚠️ Registrar Merma</button>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 30px; flex-wrap: wrap-reverse;">
-                    <!-- COLUMNA IZQUIERDA -->
                     <div style="flex: 2 1 300px;">
                         <h3 style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Estado de Existencias</h3>
                         <div id="lista-insumos" class="bento-grid-stats" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
-
-                        <!-- TABLA KARDEX -->
-                        <div id="seccion-kardex" style="margin-top: 40px; background: var(--card-dark); padding: 25px; border-radius: 24px; border: 1px solid var(--border); display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <h3 id="kardex-titulo" style="margin: 0; color: white;">Historial</h3>
-                                <button onclick="document.getElementById('seccion-kardex').style.display='none'" class="btn-action" style="background: none; border: 1px solid var(--border); color: var(--text-muted);">Cerrar</button>
-                            </div>
-                            <div style="overflow-x: auto;">
-                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white;">
-                                    <thead>
-                                        <tr style="text-align: left; border-bottom: 2px solid var(--border); color: var(--accent-yellow);">
-                                            <th style="padding: 12px;">Fecha</th>
-                                            <th style="padding: 12px;">Concepto</th>
-                                            <th style="padding: 12px;">Tipo</th>
-                                            <th style="padding: 12px; text-align: right;">Cantidad</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabla-kardex-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
 
-                   <!-- COLUMNA DERECHA -->
                     <div style="flex: 1 1 300px;">
-                        <div class="form-container" style="position: sticky; top: 20px; background: var(--card-dark); border: 1px solid var(--border); padding: 24px; border-radius: 16px; position: relative;">
-                            
-                            <!-- La X mágica que reemplaza al botón "Cancelar" grande -->
+                        <div class="form-container" style="position: sticky; top: 20px; background: var(--card-dark); border: 1px solid var(--border); padding: 24px; border-radius: 16px;">
                             <button type="button" id="btn-cancelar-inv" onclick="cancelarEdicionInv()" style="display:none; position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">✕</button>
-                            
-                            <h3 id="f-inv-title" style="margin-bottom: 15px;">Configuración de Ítem</h3>
-                           <form id="inv-form" style="display: flex; flex-direction: column; gap: 12px;">
-    <input type="hidden" id="inv-id">
-    
-    <label style="font-size:0.7rem; color:var(--accent-yellow);">NOMBRE DEL INSUMO</label>
-    <input type="text" id="inv-name" placeholder="Ej: Carne Res" required>
-    
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-            <label style="font-size:0.7rem;">UNIDAD VENTA (RECETA)</label>
-            <select id="inv-unit">
-                <option value="gramos">Gramos (g)</option>
-                <option value="unidades">Unidades</option>
-                <option value="ml">Mililitros (ml)</option>
-            </select>
-        </div>
-        <div style="flex:1;">
-            <!-- Eliminamos el ID duplicado y dejamos solo este con la explicación clara -->
-            <label style="font-size:0.7rem;">CONTENIDO POR EMPAQUE</label>
-            <input type="number" id="inv-factor" placeholder="Ej: 1000 si es x Kilo" required>
-        </div>
-    </div>
-    
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-            <label style="font-size:0.7rem; color: var(--danger);">MÍNIMO ALERTA</label>
-            <input type="number" id="inv-min" placeholder="Stock bajo" required>
-        </div>
-        <div style="flex:1;">
-            <label style="font-size:0.7rem; color: var(--success);">COSTO PROM. ($)</label>
-            <input type="number" id="inv-cost" placeholder="Valor unitario" required>
-        </div>
-    </div>
-    
-    <input type="hidden" id="inv-stock" value="0">
-    <button type="submit" class="btn-action btn-yellow" style="margin-top: 10px;">Guardar Definición</button>
-</form>
+                            <h3 id="f-inv-title" style="margin-bottom: 15px;">Definir Insumo</h3>
+                            <form id="inv-form" style="display: flex; flex-direction: column; gap: 12px;">
+                                <input type="hidden" id="inv-id">
+                                <label style="font-size:0.7rem; color:var(--accent-yellow);">NOMBRE</label>
+                                <input type="text" id="inv-name" required>
+                                <div style="display:flex; gap:10px;">
+                                    <div style="flex:1;"><label style="font-size:0.7rem;">UNIDAD RECETA</label>
+                                        <select id="inv-unit">
+                                            <option value="gramos">Gramos (g)</option>
+                                            <option value="unidades">Unidades</option>
+                                            <option value="ml">Mililitros (ml)</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex:1;"><label style="font-size:0.7rem;">CONTENIDO EMPAQUE</label>
+                                        <input type="number" id="inv-factor" required>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <div style="flex:1;"><label style="font-size:0.7rem; color: var(--danger);">MIN. ALERTA</label>
+                                        <input type="number" id="inv-min" required>
+                                    </div>
+                                    <div style="flex:1;"><label style="font-size:0.7rem; color: var(--success);">COSTO PROM.</label>
+                                        <input type="number" id="inv-cost" required>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="inv-stock" value="0">
+                                <button type="submit" class="btn-action btn-yellow">Guardar Definición</button>
+                            </form>
                         </div>
                     </div>
                 </div>
             </section>
-    <!-- SECCIÓN INVENTARIO DINÁMICO (Estilo Dashboard) -->
-<section id="v-inventario-real" class="view-section">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
-        <div>
-            <h2 style="margin: 0; color: var(--white);">Inventario Central</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Monitoreo y ajustes de stock en tiempo real</p>
-        </div>
-        <div style="display: flex; gap: 12px;">
-<input type="text" id="busqueda-inventario" oninput="renderInventarioTable()" placeholder="Buscar por nombre...">            <button onclick="descargarBalanceCSV()" class="btn-action btn-primary" style="background: #10b981; border: none;">Exportar Excel</button>
-        </div>
-    </header>
+<!-- 5. INVENTARIO CENTRAL (Monitor Diario) -->
+            <section id="v-inventario-real" class="view-section">
+                <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2 style="margin: 0; color: var(--white);">Inventario Central</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Monitoreo y ajustes en tiempo real</p>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" id="busqueda-inventario" oninput="renderInventarioTable()" placeholder="Buscar por nombre...">
+                        <button onclick="descargarBalanceCSV()" class="btn-action btn-primary" style="background: #10b981; border: none;">Exportar Excel</button>
+                    </div>
+                </header>
 
-    <div class="dashboard-table-container" style="background: var(--card-dark); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-            <thead>
-                <tr style="background: rgba(255,255,255,0.02); color: var(--text-muted); border-bottom: 1px solid var(--border);">
-                    <th style="padding: 16px 20px;">Título / Insumo</th>
-                    <th style="padding: 16px 20px;">Categoría</th>
-                    <th style="padding: 16px 20px; text-align: center;">Stock (QTY)</th>
-                    <th style="padding: 16px 20px; text-align: center;">U. Medida</th>
-                    <th style="padding: 16px 20px;">Precio Unit.</th>
-                    <th style="padding: 16px 20px; text-align: center;">Estado</th>
-                    <th style="padding: 16px 20px; text-align: right;">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-inventario-dinamica">
-                <!-- Se llena con JS -->
-            </tbody>
-        </table>
-    </div>
-</section>
-            <!-- SECCIÓN BALANCE (CUADRE DIARIO) -->
-<section id="v-balance" class="view-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h2>Cuadre de Inventario</h2>
-        <div style="display: flex; gap: 10px;">
-            <select id="filtro-balance" onchange="abrirSeccionBalance()" style="width: auto; margin-bottom: 0;">
-                <option value="hoy">Hoy</option>
-                <option value="ayer">Ayer</option>
-                <option value="semana">Últimos 7 días</option>
-                <option value="todo">Todo el historial</option>
-            </select>
-            <button onclick="volverInventario()" class="btn-action btn-outline">Volver</button>
-        </div>
-    </div>
-    <div class="dashboard-table-container" style="background: var(--card-dark); border: 1px solid var(--border); border-radius: 16px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="color: var(--accent-yellow); border-bottom: 1px solid var(--border);">
-                    <th style="padding: 16px;">Insumo</th>
-                    <th style="padding: 16px; text-align: center;">Entradas (+)</th>
-                    <th style="padding: 16px; text-align: center;">Salidas (-)</th>
-                    <th style="padding: 16px; text-align: right;">Stock Final</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-balance-seccion"></tbody>
-        </table>
-    </div>
-</section>
+                <div class="dashboard-table-container" style="background: var(--card-dark); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.02); color: var(--text-muted); border-bottom: 1px solid var(--border);">
+                                <th style="padding: 16px 20px;">Insumo</th>
+                                <th style="padding: 16px 20px;">Categoría</th>
+                                <th style="padding: 16px 20px; text-align: center;">Stock</th>
+                                <th style="padding: 16px 20px; text-align: center;">U.M.</th>
+                                <th style="padding: 16px 20px;">Precio Unit.</th>
+                                <th style="padding: 16px 20px; text-align: center;">Estado</th>
+                                <th style="padding: 16px 20px; text-align: right;">Historial</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-inventario-dinamica"></tbody>
+                    </table>
+                </div>
+
+                <!-- EL HISTORIAL (KARDEX) VIVE AQUÍ -->
+                <div id="seccion-kardex" style="margin-top: 40px; background: var(--card-dark); padding: 25px; border-radius: 24px; border: 1px solid var(--border); display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 id="kardex-titulo" style="margin: 0; color: white;">Historial</h3>
+                        <button onclick="document.getElementById('seccion-kardex').style.display='none'" class="btn-action" style="background: none; border: 1px solid var(--border); color: var(--text-muted);">Cerrar</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 2px solid var(--border); color: var(--accent-yellow);">
+                                    <th style="padding: 12px;">Fecha</th>
+                                    <th style="padding: 12px;">Concepto</th>
+                                    <th style="padding: 12px;">Tipo</th>
+                                    <th style="padding: 12px; text-align: right;">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-kardex-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. BALANCE (CUADRE DIARIO) -->
+            <section id="v-balance" class="view-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2>Cuadre de Inventario</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="filtro-balance" onchange="abrirSeccionBalance()" style="width: auto; margin-bottom: 0;">
+                            <option value="hoy">Hoy</option>
+                            <option value="ayer">Ayer</option>
+                            <option value="semana">Últimos 7 días</option>
+                            <option value="todo">Todo el historial</option>
+                        </select>
+                        <button onclick="cambiarVista('v-inventario-real', document.querySelector('[title=\'Inventario Central\']'))" class="btn-action btn-outline">Volver</button>
+                    </div>
+                </div>
+                <div class="dashboard-table-container" style="background: var(--card-dark); border: 1px solid var(--border); border-radius: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="color: var(--accent-yellow); border-bottom: 1px solid var(--border);">
+                                <th style="padding: 16px;">Insumo</th>
+                                <th style="padding: 16px; text-align: center;">Entradas (+)</th>
+                                <th style="padding: 16px; text-align: center;">Salidas (-)</th>
+                                <th style="padding: 16px; text-align: right;">Stock Final</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-balance-seccion"></tbody>
+                    </table>
+                </div>
+            </section>
         </main>
-    </div>
-
+           
   <!-- MODALES DE ACCIÓN -->
     <div id="modal-compra" onclick="if(event.target === this) cerrarModales()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); justify-content:center; align-items:center; z-index:2000;">
         <div style="background:var(--card-dark); border: 1px solid var(--border); padding:30px; border-radius:24px; width:400px; color:var(--white); position: relative;">
