@@ -922,3 +922,33 @@ window.descargarBalanceCSV = () => {
     document.body.removeChild(link);
 };
 // Asegúrate de que estas funciones críticas tengan el prefijo window.
+window.descargarInventarioCSV = () => {
+    if (insumosGlobales.length === 0) {
+        alert("No hay insumos registrados en el inventario.");
+        return;
+    }
+
+    let csvContent = "Insumo,Unidad de Medida,Stock Actual,Costo Promedio,Estado\n";
+    
+    insumosGlobales.forEach(i => {
+        const esBajo = Number(i.stockActual) <= Number(i.umbralMinimo);
+        const estado = esBajo ? "STOCK BAJO" : "SALUDABLE";
+        
+        // Limpiamos nombres para que Excel no se confunda con comas en el texto
+        const nombreLimpio = i.nombre ? i.nombre.replace(/,/g, '') : '';
+        
+        csvContent += `"${nombreLimpio}","${i.unidad}","${i.stockActual}","${i.costoUnitario}","${estado}"\n`;
+    });
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    const fechaActual = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Inventario_Actual_IKU_${fechaActual}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
