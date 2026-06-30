@@ -3,7 +3,7 @@ import { collection, addDoc, onSnapshot, doc, query, orderBy, serverTimestamp } 
 
 // --- CONFIGURACIÓN Y ESTADO ---
 let carrito = [];
-const IKU_COORDS = { lat: 10.421639, lng: -73.688528 }; // Pueblo Bello, Cesar
+const IKU_COORDS = { lat: 9.5165, lng: -75.5835 }; // Tolú, Sucre
 const RADIO_MAXIMO_KM = 4; 
 let ubicacionCliente = null;
 
@@ -71,7 +71,7 @@ function validarRango() {
     
     const btn = document.querySelector('.btn-send-order');
     if (dist > RADIO_MAXIMO_KM) {
-        alert(`Fuera de rango: Estás en Medellín (${dist.toFixed(1)}km). Solo entregamos en Pueblo Bello (máx ${RADIO_MAXIMO_KM}km).`);
+        alert(`Fuera de rango: Estás fuera de nuestro rango (${dist.toFixed(4)}km). Solo entregamos en Tolú, Sucre (máx ${RADIO_MAXIMO_KM}km).`);
         btn.disabled = true;
         btn.innerText = "FUERA DE COBERTURA";
         return false;
