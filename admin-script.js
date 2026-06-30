@@ -527,14 +527,12 @@ function escucharCarta() {
     onSnapshot(collection(db, "platos"), (snap) => {
         const list = document.getElementById('inv-list'); if (!list) return;
 const cats = { 
-    diario: { titulo: "Menú del Día", platos: [] }, 
-    almuerzo: { titulo: "Almuerzos", platos: [] }, 
-    desayuno: { titulo: "Desayunos", platos: [] }, 
-    especial: { titulo: "Especiales", platos: [] }, 
-    asado: { titulo: "Asados", platos: [] }, 
-    rapida: { titulo: "Comida Rápida", platos: [] }, 
-    bebida: { titulo: "Bebidas", platos: [] }, 
-    otros: { titulo: "Otros", platos: [] } 
+    sandwich: { titulo: "Sandwich", platos: [] }, 
+    naturales: { titulo: "Jugos Naturales", platos: [] }, 
+    Bebidas: { titulo: "Otras bebidas", platos: [] }, 
+    Adiciones: { titulo: "Adiciones", platos: [] }, 
+   
+   
 };        
         snap.forEach(d => {
             const it = d.data(); it.id = d.id; menuGlobal[it.nombre] = it;
